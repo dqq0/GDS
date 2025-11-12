@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Horario</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/schedule-tabs.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1>📅 Mi Horario</h1>
+      <div class="user-info">
+        <span id="user-name"></span>
+        <button onclick="logout()" class="btn-secondary">
+          Cerrar Sesión
+        </button>
+      </div>
+    </header>
+
+    <main class="schedule-container-new">
+      <div class="breadcrumb">
+        <a href="blueprint.html">Estudiante</a>
+        <span>›</span>
+        <a href="schedule.html">Registro Curricular</a>
+        <span>›</span>
+        <span class="active">Horario De Clases</span>
+      </div>
+
+      <div class="periodo-selector">
+        <label for="periodo">Periodo</label>
+        <select id="periodo">
+          <option value="2025-1">2025 Semestre 1</option>
+          <option value="2025-2" selected>2025 Semestre 2</option>
+        </select>
+      </div>
+
+      <div class="actions-bar">
+        <a href="blueprint.html" class="btn-secondary btn-back">
+          ← Volver al Blueprint
+        </a>
+        <button class="btn-pdf">
+          <span>📄</span> Descargar PDF
+        </button>
+      </div>
+
+      <!-- Tabs de días -->
+      <div class="days-tabs">
+        <button class="day-tab active" data-day="lunes">Lunes</button>
+        <button class="day-tab" data-day="martes">Martes</button>
+        <button class="day-tab" data-day="miércoles">Miércoles</button>
+        <button class="day-tab" data-day="jueves">Jueves</button>
+        <button class="day-tab" data-day="viernes">Viernes</button>
+      </div>
+
+      <!-- Contenido del horario por día -->
+      <div id="schedule-content" class="schedule-content">
+        <div class="loading">Cargando horario...</div>
+      </div>
+    </main>
+
+    <script src="js/schedule-tabs.js"></script>
+  </body>
+</html>

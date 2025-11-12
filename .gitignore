@@ -1,0 +1,5 @@
+# Dependencias de Node (¡Nunca subir!)
+node_modules
+
+# Archivos de entorno (Contraseñas, llaves)
+.env

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Organizador de Salas</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <h1>🏫 Organizador de Salas</h1>
+        <h2>Iniciar Sesión</h2>
+
+        <div id="error-message" class="error-message" style="display: none"></div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email">Correo Electrónico</label>
+            <input
+              type="email"
+              id="email"
+              required
+              placeholder="ejemplo@mail.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input
+              type="password"
+              id="password"
+              required
+              placeholder="******"
+            />
+          </div>
+
+          <button type="submit" class="btn-primary">Ingresar</button>
+        </form>
+
+        <div class="test-users">
+          <p><strong>Usuarios de prueba:</strong></p>
+          <p>
+            Profesor: <code>profesor@mail.com</code> / <code>123456</code>
+          </p>
+          <p>
+            Ayudante: <code>ayudante@mail.com</code> / <code>123456</code>
+          </p>
+          <p>Alumno: <code>alumno@mail.com</code> / <code>123456</code></p>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+  </body>
+</html>

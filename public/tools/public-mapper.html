@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mapeador de Coordenadas</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial;
+      }
+      #canvas {
+        border: 2px solid black;
+        cursor: crosshair;
+      }
+      #output {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 8px;
+      }
+      .btn {
+        margin: 10px 5px;
+        padding: 10px 20px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🗺️ Mapeador de Coordenadas para Plano</h1>
+    <p>
+      <strong>Instrucciones:</strong> Haz clic en las esquinas de cada sala
+      siguiendo el sentido horario
+    </p>
+
+    <div>
+      <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+        onchange="loadImage()"
+      />
+      <button class="btn" onclick="clearPoints()">Limpiar Puntos</button>
+      <button class="btn" onclick="copyCoordinates()">
+        Copiar Coordenadas
+      </button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="output">
+      <h3>Coordenadas del polígono:</h3>
+      <pre id="coordinates"></pre>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      let points = [];
+      let img = null;
+
+      function loadImage() {
+        const file = document.getElementById("imageInput").files[0];
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+          img = new Image();
+          img.onload = function () {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            draw();
+          };
+          img.src = e.target.result;
+        };
+
+        reader.readAsDataURL(file);
+      }
+
+      canvas.addEventListener("click", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.round(e.clientX - rect.left);
+        const y = Math.round(e.clientY - rect.top);
+
+        points.push({ x, y });
+        draw();
+        updateCoordinates();
+      });
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (img) {
+          ctx.drawImage(img, 0, 0);
+        }
+
+        // Dibujar líneas entre puntos
+        if (points.length > 1) {
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+
+          for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+          }
+
+          ctx.stroke();
+        }
+
+        // Dibujar puntos
+        points.forEach((point, index) => {
+          ctx.fillStyle = "red";
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "black";
+          ctx.font = "14px Arial";
+          ctx.fillText(index + 1, point.x + 10, point.y - 10);
+        });
+      }
+
+      function updateCoordinates() {
+        const coordsStr = points
+          .map((p) => `${p.x},${p.y}`)
+          .join(" ");
+        document.getElementById("coordinates").textContent = coordsStr;
+      }
+
+      function clearPoints() {
+        points = [];
+        draw();
+        updateCoordinates();
+      }
+
+      function copyCoordinates() {
+        const coords = document.getElementById("coordinates").textContent;
+        navigator.clipboard.writeText(coords);
+        alert("✅ Coordenadas copiadas al portapapeles");
+      }
+    </script>
+  </body>
+</html>

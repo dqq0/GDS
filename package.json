@@ -1,0 +1,20 @@
+{
+  "name": "organizador-salas",
+  "version": "1.0.0",
+  "description": "Sistema de reserva de salas educativas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["reservas", "salas", "educacion"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

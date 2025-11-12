@@ -1,0 +1,310 @@
+/* ========== CONTENEDOR PRINCIPAL ========== */
+.schedule-container-new {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px 40px;
+}
+
+/* ========== BREADCRUMB ========== */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 25px;
+  font-size: 14px;
+}
+
+.breadcrumb a {
+  color: #3498db;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumb a:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+.breadcrumb span {
+  color: #7f8c8d;
+}
+
+.breadcrumb .active {
+  color: #f39c12;
+  font-weight: 600;
+}
+
+/* ========== SELECTOR DE PERIODO ========== */
+.periodo-selector {
+  background: white;
+  padding: 20px 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.periodo-selector label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.periodo-selector select {
+  padding: 10px 40px 10px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%23333' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.periodo-selector select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* ========== BARRA DE ACCIONES ========== */
+.actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.btn-back {
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+.btn-pdf {
+  padding: 10px 24px;
+  border: 2px solid #e74c3c;
+  background: white;
+  color: #e74c3c;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-pdf:hover {
+  background: #e74c3c;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+/* ========== TABS DE DÍAS ========== */
+.days-tabs {
+  display: flex;
+  gap: 0;
+  background: white;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-bottom: 3px solid #e0e0e0;
+}
+
+.day-tab {
+  flex: 1;
+  padding: 18px 20px;
+  border: none;
+  background: white;
+  color: #7f8c8d;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 4px solid transparent;
+  position: relative;
+}
+
+.day-tab:hover {
+  background: #f8f9fa;
+  color: #2c3e50;
+}
+
+.day-tab.active {
+  color: #f39c12;
+  background: #fffbf5;
+  border-bottom-color: #f39c12;
+}
+
+/* ========== CONTENIDO DEL HORARIO ========== */
+.schedule-content {
+  background: white;
+  padding: 30px;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  min-height: 400px;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: #7f8c8d;
+  font-size: 16px;
+}
+
+.no-classes {
+  text-align: center;
+  padding: 60px;
+  color: #7f8c8d;
+  font-size: 16px;
+}
+
+/* ========== TARJETA DE CLASE ========== */
+.class-card {
+  background: #f8f9fa;
+  border-left: 5px solid #3498db;
+  border-radius: 10px;
+  padding: 0;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.class-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.class-header {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+}
+
+.class-number {
+  background: #e3f2fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2980b9;
+  padding: 20px;
+}
+
+.class-time {
+  display: flex;
+  align-items: center;
+  padding: 20px 25px;
+  background: white;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.class-body {
+  padding: 25px;
+}
+
+.class-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.class-code {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-bottom: 20px;
+}
+
+.class-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.detail-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3498db;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 90px;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* ========== ACCIONES DE CLASE ========== */
+.class-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+  display: flex;
+  gap: 10px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .schedule-container-new {
+    padding: 20px 15px;
+  }
+
+  .days-tabs {
+    flex-wrap: wrap;
+  }
+
+  .day-tab {
+    flex: 1 1 calc(33.33% - 10px);
+    font-size: 14px;
+    padding: 14px 10px;
+  }
+
+  .class-header {
+    grid-template-columns: 60px 1fr;
+  }
+
+  .class-number {
+    font-size: 24px;
+  }
+
+  .class-time {
+    font-size: 16px;
+    padding: 15px;
+  }
+
+  .class-details {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-bar {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .btn-back,
+  .btn-pdf {
+    width: 100%;
+    justify-content: center;
+  }
+}

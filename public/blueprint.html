@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blueprint Interactivo - Organizador de Salas</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1>🏫 Plano de Salas - Piso 3</h1>
+      <div class="user-info">
+        <span id="user-name"></span>
+        <button onclick="logout()" class="btn-secondary">
+          Cerrar Sesión
+        </button>
+      </div>
+    </header>
+
+    <main class="blueprint-container">
+      <!-- Controles superiores -->
+      <div class="controls">
+        <div class="form-group">
+          <label for="dia-select">Día:</label>
+          <select id="dia-select">
+            <option value="lunes">Lunes</option>
+            <option value="martes">Martes</option>
+            <option value="miércoles">Miércoles</option>
+            <option value="jueves">Jueves</option>
+            <option value="viernes">Viernes</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="horario-select">Horario:</label>
+          <select id="horario-select">
+            <option value="08:00-09:35">08:00 - 09:35</option>
+            <option value="09:40-11:15">09:40 - 11:15</option>
+            <option value="11:20-12:55">11:20 - 12:55</option>
+            <option value="14:00-15:35">14:00 - 15:35</option>
+            <option value="15:40-17:15">15:40 - 17:15</option>
+          </select>
+        </div>
+
+        <button onclick="actualizarPlano()" class="btn-primary">
+          Actualizar
+        </button>
+      </div>
+
+      <!-- Leyenda -->
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-color disponible"></span>
+          <span>Disponible</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color ocupada"></span>
+          <span>Ocupada</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color no-disponible"></span>
+          <span>No disponible (Baños, etc.)</span>
+        </div>
+      </div>
+
+      <!-- Contenedor del plano con SVG superpuesto -->
+      <div class="plano-wrapper">
+        <svg
+          id="plano-svg"
+          viewBox="0 0 800 600"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <!-- Imagen de fondo del plano -->
+          <image
+            href="img/plano-piso2.png"
+            width="800"
+            height="600"
+            opacity="0.3"
+          />
+
+          <!-- Las áreas interactivas se generarán dinámicamente aquí -->
+          <g id="salas-layer"></g>
+
+          <!-- Labels de las salas se generarán aquí -->
+          <g id="labels-layer"></g>
+        </svg>
+
+        <!-- Tooltip para mostrar info al hacer hover -->
+        <div id="tooltip" class="tooltip" style="display: none"></div>
+      </div>
+
+      <!-- Panel de información de sala seleccionada -->
+      <div id="room-info" class="room-info" style="display: none">
+        <h3 id="room-title"></h3>
+        <p id="room-details"></p>
+        <div class="room-actions">
+          <button id="btn-reservar" class="btn-primary">Reservar</button>
+          <button onclick="cerrarInfo()" class="btn-secondary">
+            Cerrar
+          </button>
+        </div>
+      </div>
+
+      <a href="schedule.html" class="btn-secondary btn-horario">
+        Ver Mi Horario
+      </a>
+    </main>
+
+    <!-- Modal de Reserva -->
+    <div id="modal-reserva" class="modal" style="display: none">
+      <div class="modal-content">
+        <h2>Reservar Sala <span id="modal-sala-numero"></span></h2>
+        <form id="form-reserva">
+          <div class="form-group">
+            <label for="asignatura-codigo">Código Asignatura:</label>
+            <input
+              type="text"
+              id="asignatura-codigo"
+              required
+              placeholder="MAT101"
+            />
+          </div>
+          <div class="form-group">
+            <label for="asignatura-nombre">Nombre Asignatura:</label>
+            <input
+              type="text"
+              id="asignatura-nombre"
+              required
+              placeholder="Cálculo I"
+            />
+          </div>
+          <div class="modal-buttons">
+            <button type="submit" class="btn-primary">Confirmar</button>
+            <button
+              type="button"
+              onclick="cerrarModal()"
+              class="btn-secondary"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="js/salas-config.js"></script>
+    <script src="js/blueprint-svg.js"></script>
+  </body>
+</html>
