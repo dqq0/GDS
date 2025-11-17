@@ -11,6 +11,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// --- INSERTA ESTE BLOQUE AQUÍ ---
+// Rutas para servir las páginas HTML
+
+// Ruta raíz (para index.html)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Ruta para admin.html
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Ruta para blueprint.html
+app.get('/blueprint', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'blueprint.html'));
+});
+
+// Ruta para schedule.html
+app.get('/schedule', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'schedule.html'));
+});
+
+
 // Rutas de archivos JSON
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const ROOMS_FILE = path.join(__dirname, 'data', 'rooms.json');
