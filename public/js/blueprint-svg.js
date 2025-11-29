@@ -1,9 +1,14 @@
-const API_URL = '/api';
+const API_URL = '/api'; // O tu URL completa si es necesario
 let currentUser = null;
 let selectedRoom = null;
 let reservaciones = [];
+let pisoActual = 2; // Valor por defecto (debe coincidir con el HTML selected)
 
+// ==========================================
+// 1. INICIALIZACIÓN Y AUTH
+// ==========================================
 window.onload = () => {
+  // Verificar Auth
   const userStr = localStorage.getItem("user");
   if (!userStr) {
     window.location.href = "index.html";
@@ -11,31 +16,82 @@ window.onload = () => {
   }
 
   currentUser = JSON.parse(userStr);
-  document.getElementById("user-name").textContent = `👤 ${currentUser.nombre}`;
+  
+  // Actualizar nombre de usuario en el header
+  const userNameElement = document.getElementById("user-name");
+  if(userNameElement) userNameElement.textContent = `👤 ${currentUser.nombre}`;
 
-  inicializarPlano();
-  actualizarPlano();
+  // Detectar selección inicial del HTML
+  const selectPiso = document.getElementById('piso-select');
+  if(selectPiso) {
+    pisoActual = parseInt(selectPiso.value);
+  }
+
+  // Iniciar la vista
+  cambiarPiso();
 };
 
+// ==========================================
+// 2. LÓGICA DE CAMBIO DE PISO
+// ==========================================
+function cambiarPiso() {
+  // 1. Obtener el valor del select
+  const select = document.getElementById('piso-select');
+  if(select) {
+      pisoActual = parseInt(select.value);
+  }
+
+  // 2. Validar que exista configuración para ese piso
+  if (!CONFIGURACION_PISOS[pisoActual]) {
+    console.error(`No hay configuración para el piso ${pisoActual}`);
+    return;
+  }
+
+  // 3. Actualizar Título y Fondo
+  const config = CONFIGURACION_PISOS[pisoActual];
+  
+  // Cambiar texto del título H1
+  const titulo = document.getElementById('titulo-piso');
+  if(titulo) titulo.textContent = `🏫 Plano de Salas - ${config.nombre}`;
+
+  // Cambiar imagen de fondo del SVG
+  const imagen = document.getElementById('imagen-plano');
+  if(imagen) imagen.setAttribute('href', config.imagen);
+
+  // 4. Limpiar SVG actual (capas de salas y textos)
+  document.getElementById('salas-layer').innerHTML = '';
+  document.getElementById('labels-layer').innerHTML = '';
+
+  // 5. Redibujar y recargar datos
+  inicializarPlano();
+  actualizarPlano();
+}
+
+// ==========================================
+// 3. DIBUJAR EL PLANO (SVG)
+// ==========================================
 function inicializarPlano() {
   const salasLayer = document.getElementById("salas-layer");
   const labelsLayer = document.getElementById("labels-layer");
+  
+  // OBTIENE LAS SALAS DEL PISO ACTUAL DINÁMICAMENTE
+  const salasDelPiso = CONFIGURACION_PISOS[pisoActual].salas;
 
-  SALAS_PISO_2.forEach((sala) => {
-    const polygon = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "polygon"
-    );
+  salasDelPiso.forEach((sala) => {
+    // A) Crear el polígono (forma de la sala)
+    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
     polygon.setAttribute("points", sala.polygon);
     polygon.setAttribute("data-sala-id", sala.id);
     polygon.classList.add("sala-shape");
 
+    // B) Asignar clases según tipo
     if (sala.tipo === "baño") {
       polygon.classList.add("no-seleccionable", "tipo-baño");
     } else if (sala.tipo === "escalera") {
       polygon.classList.add("no-seleccionable", "tipo-escalera");
     } else {
       polygon.classList.add("seleccionable");
+      // Eventos
       polygon.addEventListener("click", () => handleSalaClick(sala));
       polygon.addEventListener("mouseenter", (e) => mostrarTooltip(e, sala));
       polygon.addEventListener("mouseleave", ocultarTooltip);
@@ -43,14 +99,12 @@ function inicializarPlano() {
 
     salasLayer.appendChild(polygon);
 
+    // C) Crear el texto (Label con número)
     if (sala.numero) {
-      const text = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "text"
-      );
-      const points = sala.polygon
-        .split(" ")
-        .map((p) => p.split(",").map(Number));
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      
+      // Calcular centro geométrico para poner el texto
+      const points = sala.polygon.split(" ").map((p) => p.split(",").map(Number));
       const centerX = points.reduce((sum, p) => sum + p[0], 0) / points.length;
       const centerY = points.reduce((sum, p) => sum + p[1], 0) / points.length;
 
@@ -66,14 +120,17 @@ function inicializarPlano() {
   });
 }
 
-// ✅ ACTUALIZACIÓN CON VALIDACIÓN VISUAL
+// ==========================================
+// 4. ACTUALIZAR ESTADOS (API)
+// ==========================================
 async function actualizarPlano() {
   const dia = document.getElementById("dia-select").value;
   const horario = document.getElementById("horario-select").value;
   const [horaInicio] = horario.split("-").map((h) => h.trim());
+  const piso = document.getElementById("piso-select")?.value || 2;
 
   try {
-    const response = await fetch(`${API_URL}/reservations?dia=${dia}&piso=2`);
+    const response = await fetch(`${API_URL}/reservations?dia=${dia}&piso=${piso}`);
     
     if (!response.ok) {
       throw new Error('Error al cargar reservas');
@@ -81,7 +138,12 @@ async function actualizarPlano() {
     
     reservaciones = await response.json();
 
-    SALAS_PISO_2.forEach((sala) => {
+    // Obtener la configuración de salas del piso actual
+    const salasActuales = window.CONFIGURACION_PISOS 
+      ? CONFIGURACION_PISOS[piso].salas 
+      : SALAS_PISO_2;
+
+    salasActuales.forEach((sala) => {
       if (sala.tipo !== "sala") return;
 
       const polygon = document.querySelector(`[data-sala-id="${sala.id}"]`);
@@ -94,15 +156,15 @@ async function actualizarPlano() {
           r.estado === "confirmada"
       );
 
+      // Remover clases previas
       polygon.classList.remove("disponible", "ocupada");
 
       if (estaOcupada) {
         polygon.classList.add("ocupada");
-        // Deshabilitar eventos de click
-        polygon.style.pointerEvents = "none";
+        polygon.style.pointerEvents = "none"; // ✅ Deshabilitar click
       } else {
         polygon.classList.add("disponible");
-        polygon.style.pointerEvents = "auto";
+        polygon.style.pointerEvents = "auto"; // ✅ Habilitar click
       }
     });
   } catch (error) {
@@ -110,8 +172,88 @@ async function actualizarPlano() {
     alert("⚠️ Error al cargar disponibilidad de salas");
   }
 }
+// ==========================================
+// 5. INTERACCIÓN (Click, Tooltip, Modal)
+// ==========================================
 
-// ✅ MANEJO DE ERRORES MEJORADO
+function handleSalaClick(sala) {
+  // Doble chequeo de seguridad visual
+  const polygon = document.querySelector(`[data-sala-id="${sala.id}"]`);
+  if (polygon.classList.contains("ocupada")) {
+    alert("⚠️ Esta sala ya está ocupada en este horario");
+    return;
+  }
+
+  selectedRoom = sala;
+  mostrarInfoSala(sala);
+}
+
+function mostrarTooltip(event, sala) {
+  const tooltip = document.getElementById("tooltip");
+  const reserva = reservaciones.find(
+    (r) => r.salaId === sala.id && r.estado === "confirmada"
+  );
+
+  let contenido = `<strong>Sala ${sala.numero}</strong><br>`;
+  contenido += `Capacidad: ${sala.capacidad}<br>`;
+  
+  if (sala.computadores) contenido += `💻 Lab. Computación<br>`;
+
+  if (reserva) {
+    contenido += `<br><span style="color: #ff4444;">⛔ Ocupada (${reserva.asignatura?.nombre || "Clase"})</span>`;
+  } else {
+    contenido += `<br><span style="color: #4caf50;">✅ Disponible</span>`;
+  }
+
+  tooltip.innerHTML = contenido;
+  tooltip.style.display = "block";
+  tooltip.style.left = (event.pageX + 15) + "px";
+  tooltip.style.top = (event.pageY + 15) + "px";
+}
+
+function ocultarTooltip() {
+  document.getElementById("tooltip").style.display = "none";
+}
+
+// Panel Lateral
+function mostrarInfoSala(sala) {
+  const infoDiv = document.getElementById("room-info");
+  const btnReservar = document.getElementById("btn-reservar");
+
+  document.getElementById("room-title").textContent = `Sala ${sala.numero}`;
+
+  let detalles = `
+    <p><strong>Tipo:</strong> ${sala.tipo === 'laboratorio' ? 'Laboratorio' : 'Aula Teórica'}</p>
+    <p><strong>Capacidad:</strong> ${sala.capacidad} estudiantes</p>
+    <p><strong>Recursos:</strong> ${sala.computadores ? 'Proyector, PC' : 'Proyector'}</p>
+  `;
+
+  document.getElementById("room-details").innerHTML = detalles;
+  
+  // Mostrar botón reservar
+  btnReservar.style.display = "inline-block";
+  btnReservar.onclick = abrirModalReserva; // Vincular evento
+
+  infoDiv.style.display = "block";
+}
+
+function cerrarInfo() {
+  document.getElementById("room-info").style.display = "none";
+}
+
+// ==========================================
+// 6. GESTIÓN DE RESERVAS (Submit)
+// ==========================================
+function abrirModalReserva() {
+  document.getElementById("modal-sala-numero").textContent = selectedRoom.numero;
+  document.getElementById("modal-reserva").style.display = "flex";
+}
+
+function cerrarModal() {
+  document.getElementById("modal-reserva").style.display = "none";
+  document.getElementById("form-reserva").reset();
+}
+
 document.getElementById("form-reserva").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -131,6 +273,7 @@ document.getElementById("form-reserva").addEventListener("submit", async (e) => 
         dia,
         horaInicio,
         horaFin,
+        piso: pisoActual, // Importante guardar el piso
         asignatura: { codigo, nombre },
       }),
     });
@@ -141,29 +284,19 @@ document.getElementById("form-reserva").addEventListener("submit", async (e) => 
       alert("✅ Reserva creada exitosamente");
       cerrarModal();
       cerrarInfo();
-      actualizarPlano(); // Recargar estado visual
+      actualizarPlano(); // Recargar colores
     } else if (response.status === 409) {
-      // Conflicto de horario
-      alert(`❌ ERROR: ${data.error}\n\nEsta sala ya está reservada en este horario.`);
+      alert(`❌ CONFLICTO: ${data.error}`);
     } else {
       alert("❌ Error: " + data.error);
     }
   } catch (error) {
-    console.error("Error:", error);
-    alert("❌ Error de conexión con el servidor");
+    console.error("Error reserva:", error);
+    alert("❌ Error de conexión");
   }
 });
 
-function handleSalaClick(sala) {
-  const polygon = document.querySelector(`[data-sala-id="${sala.id}"]`);
-
-  if (polygon.classList.contains("ocupada")) {
-    alert("⚠️ Esta sala ya está ocupada en este horario");
-    return;
-  }
-
-  selectedRoom = sala;
-  mostrarInfoSala(sala);
+function logout() {
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
 }
-
-// ... resto del código existente

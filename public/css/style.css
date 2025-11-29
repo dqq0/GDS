@@ -534,4 +534,31 @@ body {
   .schedule-table td {
     padding: 12px 10px;
   }
+  .btn-google {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  color: #555;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+  transition: all 0.3s ease;
+}
+
+.btn-google:hover {
+  background: #f8f9fa;
+  border-color: #4285f4;
+}
+
+.btn-google img {
+  width: 20px;
+  height: 20px;
+}
 }

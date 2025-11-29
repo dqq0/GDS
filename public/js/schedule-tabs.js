@@ -137,6 +137,74 @@ function renderScheduleForDay(dia) {
   content.innerHTML = html;
 }
 
+// ✅ FUNCIÓN PARA EXPORTAR PDF
+async function descargarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Configuración
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('Mi Horario de Clases', 105, 20, { align: 'center' });
+
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Estudiante: ${currentUser.nombre}`, 20, 35);
+  doc.text(`Periodo: 2025 Semestre 2`, 20, 42);
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 20, 49);
+
+  // Agrupar por día
+  const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
+  let yPosition = 60;
+
+  for (const dia of diasSemana) {
+    const clasesDelDia = allSchedule.filter(
+      (c) => c.dia.toLowerCase() === dia
+    );
+
+    if (clasesDelDia.length === 0) continue;
+
+    // Título del día
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text(dia.toUpperCase(), 20, yPosition);
+    yPosition += 8;
+
+    // Tabla de clases
+    const tableData = clasesDelDia.map((clase) => [
+      `${clase.horaInicio}-${clase.horaFin}`,
+      clase.asignatura?.codigo || 'N/A',
+      clase.asignatura?.nombre || 'Sin nombre',
+      clase.sala,
+      clase.profesor || 'No asignado'
+    ]);
+
+    doc.autoTable({
+      startY: yPosition,
+      head: [['Horario', 'Código', 'Asignatura', 'Sala', 'Profesor']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [52, 152, 219], fontSize: 10 },
+      bodyStyles: { fontSize: 9 },
+      margin: { left: 20, right: 20 }
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+
+    // Nueva página si es necesario
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 20;
+    }
+  }
+
+  // Guardar PDF
+  doc.save(`Horario_${currentUser.nombre.replace(/ /g, '_')}.pdf`);
+}
+
+// ✅ Conectar botón
+document.querySelector('.btn-pdf').addEventListener('click', descargarPDF);
+
 // ========== ELIMINAR RESERVA ==========
 async function eliminarReserva(id) {
   if (!confirm('¿Estás seguro de eliminar esta reserva?')) return;

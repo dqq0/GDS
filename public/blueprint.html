@@ -8,7 +8,7 @@
   </head>
   <body>
     <header class="header">
-      <h1>🏫 Plano de Salas - Piso 3</h1>
+      <h1 id="titulo-piso">🏫 Plano de Salas - Piso 3</h1>
       <div class="user-info">
         <span id="user-name"></span>
         <button onclick="logout()" class="btn-secondary">
@@ -18,8 +18,17 @@
     </header>
 
     <main class="blueprint-container">
-      <!-- Controles superiores -->
       <div class="controls">
+        
+        <div class="form-group">
+          <label for="piso-select">Piso:</label>
+          <select id="piso-select" onchange="cambiarPiso()">
+            <option value="2">Piso 2</option>
+            <option value="3" selected>Piso 3</option>
+            <option value="4">Piso 4</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label for="dia-select">Día:</label>
           <select id="dia-select">
@@ -47,7 +56,6 @@
         </button>
       </div>
 
-      <!-- Leyenda -->
       <div class="legend">
         <div class="legend-item">
           <span class="legend-color disponible"></span>
@@ -63,33 +71,28 @@
         </div>
       </div>
 
-      <!-- Contenedor del plano con SVG superpuesto -->
       <div class="plano-wrapper">
         <svg
           id="plano-svg"
           viewBox="0 0 800 600"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <!-- Imagen de fondo del plano -->
           <image
+            id="imagen-plano"
             href="img/plano-piso2.png"
             width="800"
             height="600"
             opacity="0.3"
           />
 
-          <!-- Las áreas interactivas se generarán dinámicamente aquí -->
           <g id="salas-layer"></g>
 
-          <!-- Labels de las salas se generarán aquí -->
           <g id="labels-layer"></g>
         </svg>
 
-        <!-- Tooltip para mostrar info al hacer hover -->
         <div id="tooltip" class="tooltip" style="display: none"></div>
       </div>
 
-      <!-- Panel de información de sala seleccionada -->
       <div id="room-info" class="room-info" style="display: none">
         <h3 id="room-title"></h3>
         <p id="room-details"></p>
@@ -106,7 +109,10 @@
       </a>
     </main>
 
-    <!-- Modal de Reserva -->
+    <a href="asistente.html" class="btn-primary btn-asistente">
+  🤖 Asistente Inteligente
+</a>
+
     <div id="modal-reserva" class="modal" style="display: none">
       <div class="modal-content">
         <h2>Reservar Sala <span id="modal-sala-numero"></span></h2>
@@ -142,8 +148,8 @@
         </form>
       </div>
     </div>
-
-    <script src="js/salas-config.js"></script>
-    <script src="js/blueprint-svg.js"></script>
+<script src="js/salas-config.js"></script>
+<script src="js/pisos-config.js"></script>
+<script src="js/blueprint-svg.js"></script>
   </body>
 </html>

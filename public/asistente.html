@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistente Inteligente</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/asistente.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>🤖 Asistente Inteligente de Búsqueda</h1>
+    <div class="user-info">
+      <span id="user-name"></span>
+      <button onclick="logout()" class="btn-secondary">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="asistente-container">
+    <div class="search-card">
+      <h2>Buscar Sala Ideal</h2>
+      
+      <form id="form-busqueda">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="capacidad">Capacidad Mínima:</label>
+            <input
+              type="number"
+              id="capacidad"
+              required
+              placeholder="Ej: 30"
+              min="1"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="piso">Piso (Opcional):</label>
+            <select id="piso">
+              <option value="">Cualquiera</option>
+              <option value="2">Piso 2</option>
+              <option value="3">Piso 3</option>
+              <option value="4">Piso 4</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="computadores" />
+              Requiere Computadores
+            </label>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="proyector" />
+              Requiere Proyector
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dia">Día (Opcional):</label>
+            <select id="dia">
+              <option value="">No verificar disponibilidad</option>
+              <option value="lunes">Lunes</option>
+              <option value="martes">Martes</option>
+              <option value="miércoles">Miércoles</option>
+              <option value="jueves">Jueves</option>
+              <option value="viernes">Viernes</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="horario">Horario (Opcional):</label>
+            <select id="horario">
+              <option value="">Seleccionar...</option>
+              <option value="08:00-09:35">08:00 - 09:35</option>
+              <option value="09:40-11:15">09:40 - 11:15</option>
+              <option value="11:20-12:55">11:20 - 12:55</option>
+              <option value="14:00-15:35">14:00 - 15:35</option>
+              <option value="15:40-17:15">15:40 - 17:15</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-buscar">
+          🔍 Buscar Salas
+        </button>
+      </form>
+    </div>
+
+    <div id="resultados" class="resultados" style="display: none;">
+      <h2>Resultados de Búsqueda</h2>
+      <div id="lista-resultados"></div>
+    </div>
+  </main>
+
+  <script src="js/asistente.js"></script>
+</body>
+</html>
