@@ -384,15 +384,28 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .login-card {
   background: white;
   padding: 45px 50px;
   border-radius: 20px;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   max-width: 450px;
   width: 100%;
+  animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-card h1 {
@@ -411,18 +424,118 @@ body {
   font-weight: 500;
 }
 
+.login-card .form-group {
+  margin-bottom: 20px;
+}
+
+.login-card .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.login-card .form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.login-card .form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.login-card .btn-primary {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+/* ✅ DIVIDER */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 25px 0;
+  color: #7f8c8d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.divider span {
+  padding: 0 15px;
+}
+
+/* ✅ BOTÓN DE GOOGLE MEJORADO */
+.btn-google {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  color: #555;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.btn-google:hover {
+  background: #f8f9fa;
+  border-color: #4285f4;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+}
+
+.btn-google:active {
+  transform: translateY(0);
+}
+
+.btn-google svg {
+  flex-shrink: 0;
+}
+
+/* ✅ TEST USERS */
 .test-users {
   margin-top: 30px;
   padding: 20px;
   background: #f8f9fa;
   border-radius: 10px;
-  border-left: 4px solid #3498db;
+  border-left: 4px solid #667eea;
 }
 
 .test-users p {
   margin: 8px 0;
   font-size: 14px;
   color: #555;
+  line-height: 1.6;
+}
+
+.test-users strong {
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 10px;
+  font-size: 15px;
 }
 
 .test-users code {
@@ -430,10 +543,12 @@ body {
   padding: 3px 8px;
   border-radius: 4px;
   font-family: 'Courier New', monospace;
-  color: #e74c3c;
+  color: #667eea;
   font-size: 13px;
+  font-weight: 600;
 }
 
+/* ✅ ERROR MESSAGE */
 .error-message {
   background: #ffe6e6;
   color: #c0392b;
@@ -443,6 +558,28 @@ body {
   border-left: 4px solid #e74c3c;
   font-size: 14px;
   font-weight: 500;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+/* ✅ RESPONSIVE */
+@media (max-width: 768px) {
+  .login-card {
+    padding: 35px 30px;
+  }
+
+  .login-card h1 {
+    font-size: 26px;
+  }
+
+  .login-card h2 {
+    font-size: 18px;
+  }
 }
 
 /* ========== SCHEDULE TABLE ========== */
