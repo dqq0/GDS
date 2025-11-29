@@ -359,11 +359,21 @@ app.post('/api/search/salas', async (req, res) => {
 });
 
 // ========== SERVIR HTML ==========
-
-app.get('*', (req, res) => {
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+app.get('/blueprint', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'blueprint.html'));
+});
+
+app.get('/schedule', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'schedule.html'));
+});
+
+app.get('/asistente', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'asistente.html'));
+});
 // ========== EXPORTAR PARA VERCEL ==========
 module.exports = app;
 
