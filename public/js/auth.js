@@ -1,37 +1,108 @@
-const API_URL = '/api';
+const express = require('express');
+const router = express.Router();
+const { createClient } = require('@supabase/supabase-js');
 
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const errorDiv = document.getElementById('error-message');
+// Función para determinar rol según dominio
+function asignarRolPorDominio(email) {
+  if (email.endsWith('@academicos.uta.cl')) {
+    return 'profesor';
+  } else if (email.endsWith('@alumnos.uta.cl')) {
+    return 'alumno';
+  } else if (email.endsWith('@ayudantes.uta.cl')) {
+    return 'ayudante';
+  }
+  return 'alumno'; // Default
+}
+
+// POST - Callback de Google Auth
+router.post('/google-callback', async (req, res) => {
+  const { user } = req.body;
 
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    const email = user.email;
+    const rol = asignarRolPorDominio(email);
 
-    const data = await response.json();
+    // Verificar si el usuario ya existe
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-    if (response.ok) {
-      // Guardar usuario en localStorage
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      // Redirigir según rol
-      if (data.user.rol === 'profesor' || data.user.rol === 'ayudante') {
-        window.location.href = 'blueprint.html';
-      } else {
-        window.location.href = 'schedule.html';
-      }
-    } else {
-      errorDiv.textContent = data.error;
-      errorDiv.style.display = 'block';
+    if (existingUser) {
+      // Usuario existente
+      return res.json({
+        user: {
+          id: existingUser.id,
+          nombre: existingUser.nombre,
+          email: existingUser.email,
+          rol: existingUser.rol
+        }
+      });
     }
+
+    // Crear nuevo usuario
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert([
+        {
+          email,
+          nombre: user.user_metadata.full_name || email.split('@')[0],
+          rol,
+          avatar: user.user_metadata.avatar_url
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      user: {
+        id: newUser.id,
+        nombre: newUser.nombre,
+        email: newUser.email,
+        rol: newUser.rol
+      }
+    });
   } catch (error) {
-    errorDiv.textContent = 'Error de conexión';
-    errorDiv.style.display = 'block';
+    console.error('Error en Google callback:', error);
+    res.status(500).json({ error: error.message });
   }
 });
+
+// POST - Login tradicional (mantener para testing)
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .eq('password', password)
+      .single();
+
+    if (error || !data) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    res.json({
+      user: {
+        id: data.id,
+        nombre: data.nombre,
+        email: data.email,
+        rol: data.rol
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
