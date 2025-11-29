@@ -8,11 +8,12 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+
+// ✅ Servir archivos estáticos CORRECTAMENTE
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ========== RUTAS DE AUTENTICACIÓN ==========
 
-// POST /api/auth/login
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -26,7 +27,6 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    // Determinar rol por dominio
     let rol = user.rol || 'alumno';
     if (email.endsWith('@academicos.uta.cl')) rol = 'profesor';
     else if (email.endsWith('@ayudantes.uta.cl')) rol = 'ayudante';
@@ -46,14 +46,12 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/google-callback
 app.post('/api/auth/google-callback', async (req, res) => {
   const { user } = req.body;
 
   try {
     const email = user.email;
     
-    // Asignar rol por dominio
     let rol = 'alumno';
     if (email.endsWith('@academicos.uta.cl')) rol = 'profesor';
     else if (email.endsWith('@ayudantes.uta.cl')) rol = 'ayudante';
@@ -64,7 +62,6 @@ app.post('/api/auth/google-callback', async (req, res) => {
     let existingUser = users.find(u => u.email === email);
 
     if (!existingUser) {
-      // Crear nuevo usuario
       existingUser = {
         id: users.length + 1,
         email,
@@ -95,7 +92,6 @@ app.post('/api/auth/google-callback', async (req, res) => {
 
 // ========== RUTAS DE SALAS ==========
 
-// GET /api/salas
 app.get('/api/salas', async (req, res) => {
   try {
     const roomsData = await fs.readFile(path.join(__dirname, 'data', 'rooms.json'), 'utf-8');
@@ -109,7 +105,6 @@ app.get('/api/salas', async (req, res) => {
 
 // ========== RUTAS DE RESERVACIONES ==========
 
-// GET /api/reservations
 app.get('/api/reservations', async (req, res) => {
   const { dia, piso } = req.query;
 
@@ -120,12 +115,10 @@ app.get('/api/reservations', async (req, res) => {
     );
     let reservations = JSON.parse(reservationsData);
 
-    // Filtrar por día
     if (dia) {
       reservations = reservations.filter(r => r.dia === dia);
     }
 
-    // Filtrar por piso (necesita cruzar con rooms.json)
     if (piso) {
       const roomsData = await fs.readFile(path.join(__dirname, 'data', 'rooms.json'), 'utf-8');
       const rooms = JSON.parse(roomsData);
@@ -141,7 +134,6 @@ app.get('/api/reservations', async (req, res) => {
   }
 });
 
-// POST /api/reservations - Con validación de conflictos
 app.post('/api/reservations', async (req, res) => {
   const { salaId, usuarioId, dia, horaInicio, horaFin, asignatura } = req.body;
 
@@ -152,7 +144,6 @@ app.post('/api/reservations', async (req, res) => {
     );
     const reservations = JSON.parse(reservationsData);
 
-    // ✅ VALIDAR CONFLICTO DE HORARIO
     const conflicto = reservations.find(
       r =>
         r.salaId === salaId &&
@@ -168,7 +159,6 @@ app.post('/api/reservations', async (req, res) => {
       });
     }
 
-    // Crear nueva reserva
     const nuevaReserva = {
       id: reservations.length + 1,
       salaId,
@@ -195,7 +185,6 @@ app.post('/api/reservations', async (req, res) => {
   }
 });
 
-// DELETE /api/reservations/:id
 app.delete('/api/reservations/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -222,7 +211,6 @@ app.delete('/api/reservations/:id', async (req, res) => {
 
 // ========== RUTA DE HORARIO ==========
 
-// GET /api/schedule/:userId
 app.get('/api/schedule/:userId', async (req, res) => {
   const { userId } = req.params;
 
@@ -236,12 +224,10 @@ app.get('/api/schedule/:userId', async (req, res) => {
     const reservations = JSON.parse(reservationsData);
     const rooms = JSON.parse(roomsData);
 
-    // Filtrar reservas del usuario
     const userReservations = reservations.filter(
       r => r.usuarioId === parseInt(userId) && r.estado === 'confirmada'
     );
 
-    // Enriquecer con info de salas
     const schedule = userReservations.map(r => {
       const room = rooms.find(room => room.id === r.salaId);
       return {
@@ -265,7 +251,6 @@ app.get('/api/schedule/:userId', async (req, res) => {
 
 // ========== BÚSQUEDA INTELIGENTE ==========
 
-// POST /api/search/salas
 app.post('/api/search/salas', async (req, res) => {
   const {
     capacidadMinima,
@@ -280,27 +265,22 @@ app.post('/api/search/salas', async (req, res) => {
     const roomsData = await fs.readFile(path.join(__dirname, 'data', 'rooms.json'), 'utf-8');
     let salas = JSON.parse(roomsData).filter(s => s.tipo === 'sala');
 
-    // Filtrar por capacidad
     if (capacidadMinima) {
       salas = salas.filter(s => s.capacidad >= capacidadMinima);
     }
 
-    // Filtrar por computadores
     if (requiereComputadores) {
       salas = salas.filter(s => s.tiene_computadores === true);
     }
 
-    // Filtrar por proyector
     if (requiereProyector) {
       salas = salas.filter(s => s.tiene_proyector === true);
     }
 
-    // Filtrar por piso
     if (piso) {
       salas = salas.filter(s => s.piso === parseInt(piso));
     }
 
-    // Filtrar ocupadas si se especifica horario
     if (dia && horario) {
       const [horaInicio] = horario.split('-').map(h => h.trim());
       
@@ -319,7 +299,6 @@ app.post('/api/search/salas', async (req, res) => {
       salas = salas.filter(s => !idsOcupadas.has(s.id));
     }
 
-    // Ordenar por mejor ajuste
     if (capacidadMinima) {
       salas.sort((a, b) => {
         const diffA = Math.abs(a.capacidad - capacidadMinima);
@@ -328,7 +307,6 @@ app.post('/api/search/salas', async (req, res) => {
       });
     }
 
-    // Calcular score
     const resultados = salas.map(sala => {
       let score = 100;
 
@@ -358,22 +336,6 @@ app.post('/api/search/salas', async (req, res) => {
   }
 });
 
-// ========== SERVIR HTML ==========
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/blueprint', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'blueprint.html'));
-});
-
-app.get('/schedule', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'schedule.html'));
-});
-
-app.get('/asistente', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'asistente.html'));
-});
 // ========== EXPORTAR PARA VERCEL ==========
 module.exports = app;
 
