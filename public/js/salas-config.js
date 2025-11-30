@@ -1,138 +1,157 @@
 // Configuración de todas las salas del Piso 2
 	// Coordenadas basadas en el plano arquitectónico
 	
+	
 	const SALAS_PISO_2 = [
-	  // FILA SUPERIOR (3 salas grandes)
+	  // === FILA SUPERIOR ===
 	  {
-	    id: 1,
+	    id: 201,
 	    numero: "308",
 	    nombre: "Sala de Clases A",
-	    polygon: "10,120 120,120 120,260 10,260", // x1,y1 x2,y2 x3,y3 x4,y4	    utilidad: "Pizarra digital, Proyector",
+	    polygon: "20,80 180,80 180,220 20,220",
+	    utilidad: "Pizarra digital, Proyector",
 	    capacidad: 40,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: false,
+	    tiene_proyector: true
 	  },
 	  {
-	    id: 2,
+	    id: 202,
 	    numero: "307",
 	    nombre: "Sala de Clases B",
-	    polygon: "135,120 245,120 245,260 135,260",
+	    polygon: "200,80 360,80 360,220 200,220",
 	    utilidad: "Pizarra, 30 sillas",
 	    capacidad: 30,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: false,
+	    tiene_proyector: true
 	  },
 	  {
-	    id: 3,
+	    id: 203,
 	    numero: "306",
 	    nombre: "Sala de Clases C",
-	    polygon: "260,120 370,120 370,260 260,260",
+	    polygon: "380,80 540,80 540,220 380,220",
 	    utilidad: "Proyector, Audio",
 	    capacidad: 35,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: false,
+	    tiene_proyector: true
 	  },
 	
-	  // FILA SUPERIOR DERECHA (3 salas)
+	  // === FILA SUPERIOR DERECHA ===
 	  {
-	    id: 4,
+	    id: 204,
 	    numero: "305",
 	    nombre: "Laboratorio 1",
-	    polygon: "440,120 550,120 550,260 440,260",
+	    polygon: "620,80 780,80 780,220 620,220",
 	    utilidad: "20 Computadores",
 	    capacidad: 25,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: true,
+	    tiene_proyector: true
 	  },
 	  {
-	    id: 5,
+	    id: 205,
 	    numero: "304",
 	    nombre: "Laboratorio 2",
-	    polygon: "565,120 675,120 675,260 565,260",
+	    polygon: "800,80 960,80 960,220 800,220",
 	    utilidad: "25 Computadores, Impresora",
 	    capacidad: 30,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: true,
+	    tiene_proyector: true
 	  },
 	  {
-	    id: 6,
+	    id: 206,
 	    numero: "303",
 	    nombre: "Sala Multimedia",
-	    polygon: "690,120 790,120 790,260 690,260",
+	    polygon: "980,80 1080,80 1080,220 980,220",
 	    utilidad: "Proyector 4K, Audio envolvente",
 	    capacidad: 40,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: false,
+	    tiene_proyector: true
 	  },
 	
-	  // BAÑOS (junto a escalera central) - NO SELECCIONABLES
+	  // === FILA INFERIOR ===
 	  {
-	    id: "baño-h",
-	    numero: "Baño Mujer",
-		polygon: "280,350 360,350 360,490 280,490",
-	    tipo: "baño",
-	    piso: 2,
-	  },
-	  {
-	    id: "baño-m",
-	    numero: "Baño Hombre",
-		polygon: "450,350 530,350 530,490 450,490",
-	    tipo: "baño",
-	    piso: 2,
-	  },
-	
-	  // FILA INFERIOR IZQUIERDA (2 salas)
-	  {
-	    id: 7,
+	    id: 207,
 	    numero: "310",
 	    nombre: "Sala de Reuniones",
-	    polygon: "30,350 150,350 150,490 30,490",
+	    polygon: "20,380 180,380 180,520 20,520",
 	    utilidad: "Mesa de conferencias, Proyector",
 	    capacidad: 15,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: false,
+	    tiene_proyector: true
 	  },
 	  {
-	    id: 8,
+	    id: 208,
 	    numero: "309",
 	    nombre: "Sala de Estudio",
-	    polygon: "170,350 280,350 280,490 170,490",
+	    polygon: "200,380 360,380 360,520 200,520",
 	    utilidad: "Mesas individuales, Silencioso",
 	    capacidad: 20,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: false,
+	    tiene_proyector: false
 	  },
 	
-	  // FILA INFERIOR DERECHA (2 salas)
+	  // === BAÑOS (no seleccionables) ===
 	  {
-	    id: 9,
+	    id: "baño-2h",
+	    numero: "♂",
+	    polygon: "390,380 470,380 470,520 390,520",
+	    tipo: "baño",
+	    piso: 2
+	  },
+	  {
+	    id: "escalera-2",
+	    numero: "↕",
+	    polygon: "490,380 600,380 600,520 490,520",
+	    tipo: "escalera",
+	    piso: 2
+	  },
+	  {
+	    id: "baño-2m",
+	    numero: "♀",
+	    polygon: "620,380 700,380 700,520 620,520",
+	    tipo: "baño",
+	    piso: 2
+	  },
+	
+	  {
+	    id: 209,
 	    numero: "301",
-	    nombre: "Sala de Estudio",
-	    polygon: "530,350 645,350 645,490 530,490",
-		utilidad: "Escenario, 100 butacas, Audio profesional",
+	    nombre: "Auditorio",
+	    polygon: "740,380 900,380 900,520 740,520",
+	    utilidad: "100 butacas, Audio profesional",
 	    capacidad: 100,
 	    tipo: "sala",
 	    piso: 2,
+	    tiene_computadores: false,
+	    tiene_proyector: true
 	  },
 	  {
-	    id: 10,
+	    id: 210,
 	    numero: "302",
 	    nombre: "Sala Técnica",
-	    polygon: "665,350 775,350 775,490 665,490",
-	    utilidad: "Equipos técnicos, Herramientas",
+	    polygon: "920,380 1080,380 1080,520 920,520",
+	    utilidad: "Equipos técnicos",
 	    capacidad: 10,
 	    tipo: "sala",
 	    piso: 2,
-	  },
-	
-	  // ESCALERA - NO SELECCIONABLE
-	  {
-	    id: "escalera",
-	    numero: "Escalera",
-	    polygon: "365,350 445,350 445,490 365,490",
-	    tipo: "escalera",
-	    piso: 2,
-	  },
+	    tiene_computadores: true,
+	    tiene_proyector: false
+	  }
 	];
 	
 	// Función auxiliar para obtener sala por ID

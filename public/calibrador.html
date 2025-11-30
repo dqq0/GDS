@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calibrador de Polígonos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .svg-container {
+      position: relative;
+      border: 2px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: crosshair;
+    }
+    .sala-shape {
+      fill: rgba(52, 152, 219, 0.3);
+      stroke: #e74c3c;
+      stroke-width: 3;
+      cursor: pointer;
+    }
+    .sala-shape:hover {
+      fill: rgba(231, 76, 60, 0.5);
+    }
+    .punto {
+      fill: #e74c3c;
+      stroke: white;
+      stroke-width: 2;
+    }
+    #output {
+      background: #2c3e50;
+      color: #2ecc71;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+    button {
+      padding: 10px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background: #2980b9; }
+    button.danger { background: #e74c3c; }
+    button.danger:hover { background: #c0392b; }
+    button.success { background: #27ae60; }
+    button.success:hover { background: #229954; }
+    input, select {
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .info {
+      background: #fff3cd;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      border-left: 4px solid #ffc107;
+    }
+    .coord-display {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.8);
+      color: #2ecc71;
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div class="coord-display" id="coordDisplay">X: 0, Y: 0</div>
+
+  <div class="container">
+    <h1>🎯 Calibrador de Polígonos para Blueprint</h1>
+    
+    <div class="info">
+      <strong>📌 Instrucciones:</strong><br>
+      1. Selecciona el piso<br>
+      2. Haz clic en las esquinas de una sala para crear un polígono (mínimo 3 puntos)<br>
+      3. Escribe el número de sala y capacidad<br>
+      4. Presiona "Guardar Sala"<br>
+      5. Al finalizar todas las salas, copia el código generado
+    </div>
+
+    <div class="controls">
+      <label>
+        <strong>Piso:</strong>
+        <select id="pisoSelect" onchange="cambiarPiso()">
+          <option value="1">Piso 1</option>
+          <option value="2">Piso 2</option>
+          <option value="3" selected>Piso 3</option>
+          <option value="4">Piso 4</option>
+          <option value="5">Piso 5</option>
+        </select>
+      </label>
+
+      <label>
+        <strong>Número Sala:</strong>
+        <input type="text" id="salaNumero" placeholder="Ej: 310">
+      </label>
+
+      <label>
+        <strong>Capacidad:</strong>
+        <input type="number" id="capacidad" placeholder="Ej: 35">
+      </label>
+
+      <label>
+        <input type="checkbox" id="tieneComputadores">
+        Computadores
+      </label>
+
+      <label>
+        <input type="checkbox" id="tieneProyector" checked>
+        Proyector
+      </label>
+
+      <button onclick="guardarSala()" class="success">💾 Guardar Sala</button>
+      <button onclick="limpiarPuntos()" class="danger">🗑️ Limpiar Puntos</button>
+      <button onclick="deshacerUltimo()">↩️ Deshacer Último</button>
+      <button onclick="copiarCodigo()">📋 Copiar Código</button>
+    </div>
+
+    <div class="svg-container">
+      <svg id="planoSvg" viewBox="0 0 1100 600" xmlns="http://www.w3.org/2000/svg">
+        <image id="imagenPlano" href="img/plano-piso3.png" width="1100" height="600" opacity="0.6"/>
+        <g id="salasLayer"></g>
+        <g id="puntosLayer"></g>
+      </svg>
+    </div>
+
+    <h3>📤 Código Generado:</h3>
+    <div id="output">// Haz clic en el plano para empezar...</div>
+  </div>
+
+  <script>
+    let puntosActuales = [];
+    let salasGuardadas = [];
+    let pisoActual = 3;
+    
+    const imagenesPisos = {
+      1: 'img/plano-piso1.png',
+      2: 'img/plano-piso2.png',
+      3: 'img/plano-piso3.png',
+      4: 'img/plano-piso4.png',
+      5: 'img/plano-piso5.png'
+    };
+
+    function cambiarPiso() {
+      pisoActual = parseInt(document.getElementById('pisoSelect').value);
+      document.getElementById('imagenPlano').setAttribute('href', imagenesPisos[pisoActual]);
+      salasGuardadas = [];
+      limpiarPuntos();
+      generarCodigo();
+    }
+
+    document.getElementById('planoSvg').addEventListener('click', (e) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * 1100);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * 600);
+      
+      agregarPunto(x, y);
+    });
+
+    document.getElementById('planoSvg').addEventListener('mousemove', (e) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * 1100);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * 600);
+      
+      document.getElementById('coordDisplay').textContent = `X: ${x}, Y: ${y}`;
+    });
+
+    function agregarPunto(x, y) {
+      puntosActuales.push([x, y]);
+      
+      const puntosLayer = document.getElementById('puntosLayer');
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', x);
+      circle.setAttribute('cy', y);
+      circle.setAttribute('r', 5);
+      circle.classList.add('punto');
+      puntosLayer.appendChild(circle);
+
+      if (puntosActuales.length >= 3) {
+        dibujarPoligonoTemporal();
+      }
+    }
+
+    function dibujarPoligonoTemporal() {
+      const salasLayer = document.getElementById('salasLayer');
+      salasLayer.innerHTML = '';
+      
+      salasGuardadas.forEach(sala => {
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', sala.polygon);
+        poly.classList.add('sala-shape');
+        poly.style.fill = 'rgba(76, 175, 80, 0.3)';
+        salasLayer.appendChild(poly);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        const points = sala.polygon.split(' ').map(p => p.split(',').map(Number));
+        const cx = points.reduce((sum, p) => sum + p[0], 0) / points.length;
+        const cy = points.reduce((sum, p) => sum + p[1], 0) / points.length;
+        text.setAttribute('x', cx);
+        text.setAttribute('y', cy);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '#2c3e50');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-size', '14');
+        text.textContent = sala.numero;
+        salasLayer.appendChild(text);
+      });
+
+      if (puntosActuales.length >= 3) {
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', puntosActuales.map(p => p.join(',')).join(' '));
+        poly.classList.add('sala-shape');
+        salasLayer.appendChild(poly);
+      }
+    }
+
+    function guardarSala() {
+      if (puntosActuales.length < 3) {
+        alert('⚠️ Necesitas al menos 3 puntos para crear una sala');
+        return;
+      }
+
+      const numero = document.getElementById('salaNumero').value.trim();
+      const capacidad = parseInt(document.getElementById('capacidad').value);
+
+      if (!numero || !capacidad) {
+        alert('⚠️ Debes ingresar número de sala y capacidad');
+        return;
+      }
+
+      const sala = {
+        id: parseInt(numero),
+        numero: numero,
+        polygon: puntosActuales.map(p => p.join(',')).join(' '),
+        capacidad: capacidad,
+        tiene_computadores: document.getElementById('tieneComputadores').checked,
+        tiene_proyector: document.getElementById('tieneProyector').checked,
+        tipo: 'sala',
+        piso: pisoActual
+      };
+
+      salasGuardadas.push(sala);
+      limpiarPuntos();
+      generarCodigo();
+      
+      document.getElementById('salaNumero').value = '';
+      document.getElementById('capacidad').value = '';
+      
+      alert('✅ Sala guardada');
+    }
+
+    function limpiarPuntos() {
+      puntosActuales = [];
+      document.getElementById('puntosLayer').innerHTML = '';
+      dibujarPoligonoTemporal();
+    }
+
+    function deshacerUltimo() {
+      if (puntosActuales.length > 0) {
+        puntosActuales.pop();
+        const puntosLayer = document.getElementById('puntosLayer');
+        if (puntosLayer.lastChild) {
+          puntosLayer.removeChild(puntosLayer.lastChild);
+        }
+        dibujarPoligonoTemporal();
+      }
+    }
+
+    function generarCodigo() {
+      if (salasGuardadas.length === 0) {
+        document.getElementById('output').textContent = '// Aún no hay salas guardadas...';
+        return;
+      }
+
+      let codigo = `// PISO ${pisoActual}\n`;
+      codigo += `${pisoActual}: {\n`;
+      codigo += `  nombre: 'Piso ${pisoActual}',\n`;
+      codigo += `  imagen: 'img/plano-piso${pisoActual}.png',\n`;
+      codigo += `  salas: [\n`;
+
+      salasGuardadas.forEach((sala, index) => {
+        codigo += `    {\n`;
+        codigo += `      id: ${sala.id},\n`;
+        codigo += `      numero: "${sala.numero}",\n`;
+        codigo += `      nombre: "Sala ${sala.numero}",\n`;
+        codigo += `      polygon: "${sala.polygon}",\n`;
+        codigo += `      capacidad: ${sala.capacidad},\n`;
+        codigo += `      tipo: "sala",\n`;
+        codigo += `      piso: ${sala.piso},\n`;
+        codigo += `      tiene_computadores: ${sala.tiene_computadores},\n`;
+        codigo += `      tiene_proyector: ${sala.tiene_proyector}\n`;
+        codigo += `    }${index < salasGuardadas.length - 1 ? ',' : ''}\n`;
+      });
+
+      codigo += `  ]\n`;
+      codigo += `}`;
+
+      document.getElementById('output').textContent = codigo;
+    }
+
+    function copiarCodigo() {
+      const codigo = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(codigo).then(() => {
+        alert('✅ Código copiado al portapapeles');
+      });
+    }
+
+    generarCodigo();
+  </script>
+</body>
+</html>
