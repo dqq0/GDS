@@ -54,31 +54,39 @@ function irAPerfil() {
   window.location.href = 'perfil.html';
 }
 
-function cambiarPiso() {
-  const select = document.getElementById('piso-select');
-  if(select) {
-      pisoActual = parseInt(select.value);
-  }
 
-  if (!CONFIGURACION_PISOS[pisoActual]) {
-    return;
-  }
-
-  const config = CONFIGURACION_PISOS[pisoActual];
+	function cambiarPiso() {
+	  const select = document.getElementById('piso-select');
+	  if(select) {
+	    pisoActual = parseInt(select.value);
+	  }
+	
+	  // ✅ VALIDACIÓN: Solo pisos 1, 2 y 3
+	  if (![1, 2, 3].includes(pisoActual)) {
+	    console.error('Piso no válido:', pisoActual);
+	    pisoActual = 3; // Default al piso 3
+	  }
+	
+	  if (!CONFIGURACION_PISOS[pisoActual]) {
+	    console.error('Configuración no encontrada para piso:', pisoActual);
+	    return;
+	  }
+	
+	  const config = CONFIGURACION_PISOS[pisoActual];
+	  
+	  const titulo = document.getElementById('titulo-piso');
+	  if(titulo) titulo.textContent = `🏫 Plano de Salas - ${config.nombre}`;
+	
+	  const imagen = document.getElementById('imagen-plano');
+	  if(imagen) imagen.setAttribute('href', config.imagen);
+	
+	  document.getElementById('salas-layer').innerHTML = '';
+	  document.getElementById('labels-layer').innerHTML = '';
+	
+	  inicializarPlano();
+	  actualizarPlano();
+	}
   
-  const titulo = document.getElementById('titulo-piso');
-  if(titulo) titulo.textContent = `🏫 Plano de Salas - ${config.nombre}`;
-
-  const imagen = document.getElementById('imagen-plano');
-  if(imagen) imagen.setAttribute('href', config.imagen);
-
-  document.getElementById('salas-layer').innerHTML = '';
-  document.getElementById('labels-layer').innerHTML = '';
-
-  inicializarPlano();
-  actualizarPlano();
-}
-
 function inicializarPlano() {
   const salasLayer = document.getElementById("salas-layer");
   const labelsLayer = document.getElementById("labels-layer");
