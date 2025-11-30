@@ -11,15 +11,15 @@
   <header class="header">
     <h1>🤖 Asignación Inteligente de Salas</h1>
     <div class="user-info">
-      <span id="user-name"></span>
+      <span id="user-name" onclick="irAPerfil()"></span>
       <button onclick="logout()" class="btn-secondary">Cerrar Sesión</button>
     </div>
   </header>
 
   <main class="asignacion-container">
-    <!-- Panel de Configuración -->
+    <!-- Panel de Configuración Simplificado -->
     <div class="config-panel">
-      <h2>🎯 Configuración de Requisitos</h2>
+      <h2>🎯 Buscar Sala Óptima</h2>
       
       <form id="form-asignacion">
         <div class="form-section">
@@ -67,8 +67,8 @@
           
           <div class="form-group">
             <label for="num-estudiantes">Número de Estudiantes:</label>
-            <input type="number" id="num-estudiantes" required min="1" placeholder="Ej: 35" />
-            <small>Sistema recomendará salas con capacidad óptima</small>
+            <input type="number" id="num-estudiantes" required min="1" max="200" placeholder="Ej: 35" />
+            <small>Sistema buscará salas con capacidad óptima automáticamente</small>
           </div>
 
           <div class="form-group">
@@ -98,106 +98,39 @@
                 <span>Computadores</span>
               </div>
             </label>
-
-            <label class="checkbox-card">
-              <input type="checkbox" id="req-aire" />
-              <div class="checkbox-content">
-                <span class="icon">❄️</span>
-                <span>Aire Acondicionado</span>
-              </div>
-            </label>
-
-            <label class="checkbox-card">
-              <input type="checkbox" id="req-pizarra-digital" />
-              <div class="checkbox-content">
-                <span class="icon">📱</span>
-                <span>Pizarra Digital</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>🎛️ Preferencias de Optimización</h3>
-          
-          <div class="form-group">
-            <label for="algoritmo">Algoritmo de Asignación:</label>
-            <select id="algoritmo">
-              <option value="best-fit">Best Fit - Minimizar desperdicio de espacio</option>
-              <option value="load-balance">Equilibrio de Carga - Distribuir uso entre pisos</option>
-              <option value="proximity">Proximidad - Agrupar clases relacionadas</option>
-              <option value="predictive" selected>Predictivo - Basado en patrones históricos</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="prioridad-piso">Preferencia de Piso:</label>
-            <select id="prioridad-piso">
-              <option value="">Sin preferencia</option>
-              <option value="1">Piso 1</option>
-              <option value="2">Piso 2</option>
-              <option value="3">Piso 3</option>
-              <option value="4">Piso 4</option>
-              <option value="5">Piso 5</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="evitar-adyacentes" />
-              Evitar salas adyacentes a clases ruidosas
-            </label>
-          </div>
-
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="accesibilidad" />
-              Priorizar accesibilidad (ascensores, rampas)
-            </label>
           </div>
         </div>
 
         <button type="submit" class="btn-primary btn-large">
-          🚀 Buscar Sala Óptima
+          🚀 Buscar Salas Disponibles
         </button>
       </form>
     </div>
 
     <!-- Panel de Resultados -->
     <div id="resultados-panel" class="resultados-panel" style="display: none;">
-      <h2>📊 Resultados de Asignación Inteligente</h2>
+      <h2>📊 Resultados de Búsqueda Inteligente</h2>
       
-      <div class="algoritmo-info">
-        <span id="algoritmo-usado"></span>
-        <span id="tiempo-procesamiento"></span>
+      <div class="info-busqueda">
+        <p><strong>Buscando salas para:</strong> <span id="resumen-busqueda"></span></p>
+        <p><strong>Tiempo de procesamiento:</strong> <span id="tiempo-procesamiento"></span></p>
       </div>
 
+      <!-- Recomendación Principal de IA -->
       <div id="sala-recomendada" class="sala-recomendada-card"></div>
 
+      <!-- Otras Opciones Disponibles -->
       <div class="alternativas-section">
-        <h3>Alternativas Disponibles</h3>
+        <h3>Otras Opciones Disponibles</h3>
+        <p class="subtitle">Puedes elegir cualquiera de estas salas que cumplen tus requisitos</p>
         <div id="alternativas-list"></div>
       </div>
 
-      <div class="insights-section">
-        <h3>💡 Insights del Sistema</h3>
-        <div id="insights-list"></div>
+      <!-- Estadísticas -->
+      <div class="stats-section">
+        <h3>📈 Análisis de Disponibilidad</h3>
+        <div id="stats-content"></div>
       </div>
-
-      <div class="acciones-panel">
-        <button id="btn-confirmar-asignacion" class="btn-primary">
-          ✅ Confirmar Asignación
-        </button>
-        <button onclick="nuevaBusqueda()" class="btn-secondary">
-          🔄 Nueva Búsqueda
-        </button>
-      </div>
-    </div>
-
-    <!-- Visualización de Estadísticas -->
-    <div class="stats-panel">
-      <h3>📈 Estadísticas de Ocupación en Tiempo Real</h3>
-      <canvas id="ocupacion-chart"></canvas>
     </div>
   </main>
 

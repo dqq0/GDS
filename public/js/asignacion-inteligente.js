@@ -2,7 +2,7 @@ const API_URL = '/api';
 let currentUser = null;
 let algoritmos = null;
 let resultadoActual = null;
-let chartOcupacion = null;
+let salaSeleccionada = null;
 
 window.onload = async () => {
   const userStr = localStorage.getItem('user');
@@ -23,12 +23,10 @@ window.onload = async () => {
   document.getElementById('user-name').textContent = `👤 ${currentUser.nombre}`;
 
   await inicializarSistema();
-  inicializarChart();
 };
 
 async function inicializarSistema() {
   try {
-    // Cargar salas y reservas
     const [salasRes, reservasRes] = await Promise.all([
       fetch(`${API_URL}/salas/todas`),
       fetch(`${API_URL}/reservations/todas`)
@@ -37,52 +35,15 @@ async function inicializarSistema() {
     const salas = await salasRes.json();
     const reservas = await reservasRes.json();
 
-    // Inicializar algoritmos
     algoritmos = new AlgoritmosAsignacion(salas, reservas);
 
-    console.log('✅ Sistema de asignación inteligente inicializado');
-    console.log(`📊 ${salas.length} salas cargadas`);
-    console.log(`📅 ${reservas.length} reservas activas`);
+    console.log('✅ Sistema inicializado');
+    console.log(`📊 ${salas.length} salas disponibles`);
 
   } catch (error) {
     console.error('Error al inicializar:', error);
     alert('Error al cargar datos del sistema');
   }
-}
-
-function inicializarChart() {
-  const ctx = document.getElementById('ocupacion-chart')?.getContext('2d');
-  if (!ctx) return;
-
-  chartOcupacion = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Piso 1', 'Piso 2', 'Piso 3', 'Piso 4', 'Piso 5'],
-      datasets: [{
-        label: 'Ocupación (%)',
-        data: [0, 0, 0, 0, 0],
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.7)',
-          'rgba(54, 162, 235, 0.7)',
-          'rgba(255, 206, 86, 0.7)',
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(153, 102, 255, 0.7)'
-        ]
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'bottom'
-        },
-        title: {
-          display: true,
-          text: 'Ocupación Actual por Piso'
-        }
-      }
-    }
-  });
 }
 
 document.getElementById('form-asignacion').addEventListener('submit', async (e) => {
@@ -94,9 +55,7 @@ document.getElementById('form-asignacion').addEventListener('submit', async (e) 
   const horario = document.getElementById('horario').value;
   const numEstudiantes = parseInt(document.getElementById('num-estudiantes').value);
   const margenSeguridad = document.getElementById('margen-seguridad').checked;
-  const algoritmoSeleccionado = document.getElementById('algoritmo').value;
 
-  // Calcular capacidad necesaria
   const capacidadNecesaria = margenSeguridad 
     ? Math.ceil(numEstudiantes * 1.1) 
     : numEstudiantes;
@@ -109,38 +68,17 @@ document.getElementById('form-asignacion').addEventListener('submit', async (e) 
     numEstudiantes,
     capacidadNecesaria,
     requiereProyector: document.getElementById('req-proyector').checked,
-    requiereComputadores: document.getElementById('req-computadores').checked,
-    requiereAire: document.getElementById('req-aire').checked,
-    requierePizarraDigital: document.getElementById('req-pizarra-digital').checked,
-    prioridadPiso: document.getElementById('prioridad-piso').value,
-    evitarAdyacentes: document.getElementById('evitar-adyacentes').checked,
-    accesibilidad: document.getElementById('accesibilidad').checked
+    requiereComputadores: document.getElementById('req-computadores').checked
   };
 
-  await procesarAsignacion(requisitos, algoritmoSeleccionado);
+  await procesarBusqueda(requisitos);
 });
 
-async function procesarAsignacion(requisitos, algoritmo) {
+async function procesarBusqueda(requisitos) {
   const tiempoInicio = performance.now();
 
-  // Ejecutar algoritmo seleccionado
-  let resultado;
-  switch (algoritmo) {
-    case 'best-fit':
-      resultado = algoritmos.bestFit(requisitos);
-      break;
-    case 'load-balance':
-      resultado = algoritmos.loadBalance(requisitos);
-      break;
-    case 'proximity':
-      resultado = algoritmos.proximity(requisitos);
-      break;
-    case 'predictive':
-      resultado = algoritmos.predictive(requisitos);
-      break;
-    default:
-      resultado = algoritmos.predictive(requisitos);
-  }
+  // El sistema elige automáticamente el mejor algoritmo
+  const resultado = algoritmos.busquedaInteligente(requisitos);
 
   const tiempoFin = performance.now();
   resultado.tiempoProcesamiento = (tiempoFin - tiempoInicio).toFixed(2);
@@ -149,36 +87,35 @@ async function procesarAsignacion(requisitos, algoritmo) {
   resultadoActual = resultado;
 
   mostrarResultados(resultado);
-  actualizarChartOcupacion(requisitos.dia, requisitos.horario);
 }
 
 function mostrarResultados(resultado) {
-  document.getElementById('resultados-panel').style.display = 'block';
-  document.getElementById('resultados-panel').scrollIntoView({ behavior: 'smooth' });
+  const panel = document.getElementById('resultados-panel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth' });
 
-  // Información del algoritmo
-  const nombresAlgoritmos = {
-    'best-fit': 'Best Fit - Optimización de Espacio',
-    'load-balance': 'Equilibrio de Carga',
-    'proximity': 'Proximidad',
-    'predictive': 'Predictivo con IA'
-  };
+  // Resumen de búsqueda
+  document.getElementById('resumen-busqueda').textContent = 
+    `${resultado.requisitos.numEstudiantes} estudiantes - ${resultado.requisitos.dia} ${resultado.requisitos.horario}`;
+  
+  document.getElementById('tiempo-procesamiento').textContent = 
+    `${resultado.tiempoProcesamiento}ms`;
 
-  document.getElementById('algoritmo-usado').innerHTML = 
-    `<strong>Algoritmo:</strong> ${nombresAlgoritmos[resultado.algoritmo]}`;
-  document.getElementById('tiempo-procesamiento').innerHTML = 
-    `<strong>Tiempo:</strong> ${resultado.tiempoProcesamiento}ms`;
-
-  // Sala recomendada
+  // Sala recomendada por IA
   const salaRecomendadaDiv = document.getElementById('sala-recomendada');
+  
   if (resultado.mejorOpcion) {
     const sala = resultado.mejorOpcion;
-    const desperdicio = sala.capacidad - resultado.requisitos.capacidadNecesaria;
     const ratioOcupacion = ((resultado.requisitos.capacidadNecesaria / sala.capacidad) * 100).toFixed(0);
-
+    
     salaRecomendadaDiv.innerHTML = `
+      <div class="recomendacion-badge">
+        <span class="ia-icon">🤖</span>
+        <span>RECOMENDACIÓN IA</span>
+      </div>
+      
       <div class="recomendacion-header">
-        <h3>🏆 Mejor Opción: Sala ${sala.numero}</h3>
+        <h3>🏆 Sala ${sala.numero}</h3>
         <div class="score-badge">Score: ${sala.scoreFinal?.toFixed(0) || 100}/100</div>
       </div>
       
@@ -198,84 +135,130 @@ function mostrarResultados(resultado) {
           </div>
           <div class="info-item">
             <span class="label">Espacios libres:</span>
-            <span class="value">${desperdicio}</span>
+            <span class="value">${sala.capacidad - resultado.requisitos.capacidadNecesaria}</span>
           </div>
         </div>
 
         <div class="recursos-grid">
           ${sala.tiene_computadores ? '<span class="recurso-badge">💻 Computadores</span>' : ''}
           ${sala.tiene_proyector ? '<span class="recurso-badge">📽️ Proyector</span>' : ''}
-          ${sala.tiene_aire ? '<span class="recurso-badge">❄️ Aire Acondicionado</span>' : ''}
         </div>
 
-        ${sala.probabilidadExito ? `
-          <div class="probabilidad-exito">
-            <strong>Probabilidad de Éxito:</strong> 
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: ${sala.probabilidadExito}%"></div>
-            </div>
-            <span>${sala.probabilidadExito.toFixed(0)}%</span>
+        ${sala.insights && sala.insights.length > 0 ? `
+          <div class="insights-mini">
+            <strong>Por qué es la mejor opción:</strong>
+            <ul>
+              ${sala.insights.slice(0, 3).map(insight => `<li>${insight}</li>`).join('')}
+            </ul>
           </div>
         ` : ''}
+
+        <button onclick="seleccionarSala(${sala.id}, '${sala.numero}')" class="btn-primary btn-large">
+          ✅ Reservar Esta Sala
+        </button>
       </div>
     `;
   } else {
     salaRecomendadaDiv.innerHTML = `
       <div class="no-results">
         <h3>❌ No se encontraron salas disponibles</h3>
-        <p>Intenta con otros horarios o requisitos menos restrictivos</p>
+        <p>No hay salas que cumplan con todos los requisitos en este horario.</p>
+        <p><strong>Sugerencias:</strong></p>
+        <ul>
+          <li>Intenta con otro horario</li>
+          <li>Reduce el número de estudiantes</li>
+          <li>Elimina algunos requisitos de recursos</li>
+        </ul>
       </div>
     `;
   }
 
   // Alternativas
   const alternativasDiv = document.getElementById('alternativas-list');
+  
   if (resultado.alternativas && resultado.alternativas.length > 0) {
-    let html = '';
+    let html = '<div class="alternativas-grid">';
+    
     resultado.alternativas.forEach((sala, index) => {
+      const ratioOcupacion = ((resultado.requisitos.capacidadNecesaria / sala.capacidad) * 100).toFixed(0);
+      
       html += `
         <div class="alternativa-card">
           <div class="alternativa-header">
-            <h4>${index + 2}. Sala ${sala.numero}</h4>
+            <h4>Sala ${sala.numero}</h4>
             <span class="score-mini">${sala.scoreFinal?.toFixed(0) || 'N/A'}/100</span>
           </div>
+          
           <div class="alternativa-body">
-            <span>Piso ${sala.piso}</span>
-            <span>Cap: ${sala.capacidad}</span>
-            ${sala.tiene_computadores ? '<span>💻</span>' : ''}
-            ${sala.tiene_proyector ? '<span>📽️</span>' : ''}
+            <div class="alt-info">
+              <span>📍 Piso ${sala.piso}</span>
+              <span>👥 ${sala.capacidad} personas</span>
+              <span>📊 ${ratioOcupacion}% ocupación</span>
+            </div>
+            
+            <div class="alt-recursos">
+              ${sala.tiene_computadores ? '<span>💻</span>' : ''}
+              ${sala.tiene_proyector ? '<span>📽️</span>' : ''}
+            </div>
+            
+            <button onclick="seleccionarSala(${sala.id}, '${sala.numero}')" class="btn-secondary btn-small">
+              Reservar
+            </button>
           </div>
         </div>
       `;
     });
+    
+    html += '</div>';
     alternativasDiv.innerHTML = html;
   } else {
-    alternativasDiv.innerHTML = '<p class="no-data">No hay alternativas disponibles</p>';
+    alternativasDiv.innerHTML = '<p class="no-data">No hay otras opciones disponibles</p>';
   }
 
-  // Insights
-  const insightsDiv = document.getElementById('insights-list');
-  if (resultado.mejorOpcion?.insights && resultado.mejorOpcion.insights.length > 0) {
-    let html = '<ul class="insights-list">';
-    resultado.mejorOpcion.insights.forEach(insight => {
-      html += `<li>${insight}</li>`;
-    });
-    html += '</ul>';
-    insightsDiv.innerHTML = html;
-  } else {
-    insightsDiv.innerHTML = '<p class="no-data">No hay insights disponibles</p>';
-  }
+  // Estadísticas
+  mostrarEstadisticas(resultado);
 }
 
-document.getElementById('btn-confirmar-asignacion').addEventListener('click', async () => {
-  if (!resultadoActual || !resultadoActual.mejorOpcion) {
-    alert('No hay sala seleccionada');
+function mostrarEstadisticas(resultado) {
+  const statsDiv = document.getElementById('stats-content');
+  
+  const totalSalas = resultado.todasLasSalas?.length || 0;
+  const salasOptimas = resultado.todasLasSalas?.filter(s => 
+    (s.capacidad / resultado.requisitos.capacidadNecesaria) >= 1 && 
+    (s.capacidad / resultado.requisitos.capacidadNecesaria) <= 1.3
+  ).length || 0;
+
+  statsDiv.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">${totalSalas}</div>
+        <div class="stat-label">Salas encontradas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${salasOptimas}</div>
+        <div class="stat-label">Con capacidad óptima</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${resultado.mejorOpcion ? 1 : 0}</div>
+        <div class="stat-label">Recomendación IA</div>
+      </div>
+    </div>
+  `;
+}
+
+async function seleccionarSala(salaId, salaNumero) {
+  if (!resultadoActual) return;
+
+  const sala = resultadoActual.todasLasSalas.find(s => s.id === salaId);
+  if (!sala) {
+    alert('Error: Sala no encontrada');
     return;
   }
 
-  const sala = resultadoActual.mejorOpcion;
   const requisitos = resultadoActual.requisitos;
   const [horaInicio, horaFin] = requisitos.horario.split('-').map(h => h.trim());
+
+  if (!confirm(`¿Confirmar reserva de Sala ${salaNumero}?`)) return;
 
   try {
     const response = await fetch(`${API_URL}/reservations`, {
@@ -295,13 +278,12 @@ document.getElementById('btn-confirmar-asignacion').addEventListener('click', as
         estado: 'confirmada',
         profesor: currentUser.nombre,
         asignadoPorIA: true,
-        algoritmo: resultadoActual.algoritmo,
         scoreAsignacion: sala.scoreFinal
       })
     });
 
     if (response.ok) {
-      alert('✅ Sala asignada exitosamente');
+      alert('✅ Sala reservada exitosamente');
       window.location.href = 'blueprint.html';
     } else {
       const data = await response.json();
@@ -311,28 +293,10 @@ document.getElementById('btn-confirmar-asignacion').addEventListener('click', as
     console.error('Error:', error);
     alert('❌ Error de conexión');
   }
-});
-
-async function actualizarChartOcupacion(dia, horario) {
-  if (!chartOcupacion || !algoritmos) return;
-
-  const horaInicio = horario.split('-')[0].trim();
-  const ocupacion = algoritmos.calcularOcupacionPorPiso(dia, horaInicio);
-
-  chartOcupacion.data.datasets[0].data = [
-    ocupacion[1] || 0,
-    ocupacion[2] || 0,
-    ocupacion[3] || 0,
-    ocupacion[4] || 0,
-    ocupacion[5] || 0
-  ];
-
-  chartOcupacion.update();
 }
 
-function nuevaBusqueda() {
-  document.getElementById('resultados-panel').style.display = 'none';
-  document.getElementById('form-asignacion').scrollIntoView({ behavior: 'smooth' });
+function irAPerfil() {
+  window.location.href = 'perfil.html';
 }
 
 function logout() {

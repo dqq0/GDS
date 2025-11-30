@@ -10,12 +10,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==========================================
-// BASE DE DATOS EN MEMORIA
+// BASE DE DATOS EN MEMORIA (SOLO DATOS, NO USUARIOS)
 // ==========================================
 let reservas = [];
-let notificaciones = []; // Notificaciones simples sistema antiguo
+let notificaciones = []; 
 let cancelaciones = [];
-let mensajes = [];       // NUEVO: Sistema de mensajería del fix
+let mensajes = [];       
 
 // ==========================================
 // CONFIGURACIÓN DE PISOS
@@ -45,49 +45,6 @@ const CONFIGURACION_PISOS = {
 };
 
 // ==========================================
-// AUTENTICACIÓN
-// ==========================================
-app.post(`${API_URL}/auth/login`, async (req, res) => {
-  const { email, password } = req.body;
-  const emailLower = email.toLowerCase().trim();
-  
-  // Determinar rol
-  let rol = 'alumno';
-  if (emailLower.includes('admin') || emailLower.includes('administrador')) {
-    rol = 'admin';
-  } else if (emailLower.includes('profe') || emailLower.endsWith('@academicos.uta.cl')) {
-    rol = 'profesor';
-  } else if (emailLower.includes('ayudante') || emailLower.endsWith('@ayudantes.uta.cl')) {
-    rol = 'ayudante';
-  } else {
-    rol = 'alumno';
-  }
-
-  // Usuarios demo
-  const usuariosDemo = {
-    'profe@demo.com': { rol: 'profesor', nombre: 'Profesor Demo' },
-    'ayudante@mail.com': { rol: 'ayudante', nombre: 'Ayudante Test' },
-    'alumno@test.com': { rol: 'alumno', nombre: 'Alumno Test' },
-    'admin@demo.com': { rol: 'admin', nombre: 'Admin Principal' }
-  };
-
-  const usuario = usuariosDemo[emailLower] || {
-    rol: rol,
-    nombre: emailLower.split('@')[0]
-  };
-
-  res.json({
-    user: {
-      id: Date.now(), // Simulación de ID único
-      nombre: usuario.nombre,
-      email: emailLower,
-      rol: usuario.rol,
-      asignaturas: []
-    }
-  });
-});
-
-// ==========================================
 // RESERVACIONES (GENERAL Y PROFESOR)
 // ==========================================
 
@@ -107,12 +64,14 @@ app.get(`${API_URL}/reservations/todas`, async (req, res) => {
   res.json(reservas);
 });
 
-// NUEVO: Obtener reservas de un profesor específico
+// Obtener reservas de un profesor específico (El userId viene de Supabase)
 app.get(`${API_URL}/reservations/profesor/:userId`, async (req, res) => {
   const { userId } = req.params;
   
+  // Nota: Asegúrate de que el userId que envíe el front coincida en tipo (string/int)
+  // Como Supabase usa UUID (strings), quitamos el parseInt o lo dejamos flexible:
   const reservasProfesor = reservas.filter(r => 
-    r.usuarioId === parseInt(userId) && 
+    String(r.usuarioId) === String(userId) && 
     r.estado === 'confirmada'
   );
   
@@ -141,7 +100,7 @@ app.post(`${API_URL}/reservations`, async (req, res) => {
   const nuevaReserva = {
     id: Date.now(),
     salaId,
-    usuarioId,
+    usuarioId, // Se guarda el ID que envíe Supabase
     dia,
     horaInicio,
     horaFin,
@@ -189,7 +148,7 @@ app.delete(`${API_URL}/reservations/:id`, async (req, res) => {
   res.json({ success: true });
 });
 
-// NUEVO: Cancelar con Aviso (Para Profesores)
+// Cancelar con Aviso (Para Profesores)
 app.delete(`${API_URL}/reservations/:id/cancelar-con-aviso`, async (req, res) => {
   const { id } = req.params;
   const { motivo, canceladoPor, asignatura, dia, horario, sala, profesor } = req.body;
@@ -202,7 +161,6 @@ app.delete(`${API_URL}/reservations/:id/cancelar-con-aviso`, async (req, res) =>
 
   const reserva = reservas[index];
   
-  // Registrar cancelación
   cancelaciones.push({
     id: Date.now(),
     reserva_id: parseInt(id),
@@ -212,8 +170,6 @@ app.delete(`${API_URL}/reservations/:id/cancelar-con-aviso`, async (req, res) =>
     asignatura: reserva.asignatura
   });
 
-  // Crear mensaje para TODOS los estudiantes (simulación)
-  // Nota: Usamos destinatarioId: 'todos' para que el frontend lo capture globalmente
   const mensaje = {
     id: Date.now(),
     destinatarioId: 'todos', 
@@ -229,8 +185,6 @@ app.delete(`${API_URL}/reservations/:id/cancelar-con-aviso`, async (req, res) =>
   };
   
   mensajes.push(mensaje);
-
-  // Eliminar reserva
   reservas.splice(index, 1);
 
   res.json({ 
@@ -263,7 +217,6 @@ app.get(`${API_URL}/salas/todas`, async (req, res) => {
 });
 
 app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
-  // Simulación de algoritmo
   const salasDisponibles = [
     { id: 101, numero: '101', capacidad: 40, tiene_computadores: true, tiene_proyector: true, piso: 1, score: 95 },
     { id: 201, numero: '201', capacidad: 30, tiene_computadores: false, tiene_proyector: true, piso: 2, score: 85 }
@@ -272,15 +225,15 @@ app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
 });
 
 // ==========================================
-// MENSAJES Y NOTIFICACIONES (SISTEMA NUEVO)
+// MENSAJES Y NOTIFICACIONES
 // ==========================================
 
-// Obtener mensajes de un usuario (Incluye mensajes para 'todos')
+// Obtener mensajes (userId ahora es string de Supabase probablemente)
 app.get(`${API_URL}/mensajes/:userId`, async (req, res) => {
   const { userId } = req.params;
   
   const userMensajes = mensajes
-    .filter(m => m.destinatarioId === parseInt(userId) || m.destinatarioId === 'todos')
+    .filter(m => String(m.destinatarioId) === String(userId) || m.destinatarioId === 'todos')
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
   
   res.json({ mensajes: userMensajes });
@@ -291,39 +244,30 @@ app.get(`${API_URL}/notifications/:userId/count`, async (req, res) => {
   const { userId } = req.params;
   
   const count = mensajes.filter(m => 
-    (m.destinatarioId === parseInt(userId) || m.destinatarioId === 'todos') && !m.leido
+    (String(m.destinatarioId) === String(userId) || m.destinatarioId === 'todos') && !m.leido
   ).length;
   
   res.json({ count });
 });
 
-// Marcar mensaje individual como leído
 app.patch(`${API_URL}/mensajes/:id/leer`, async (req, res) => {
   const { id } = req.params;
-  
   const mensaje = mensajes.find(m => m.id === parseInt(id));
-  if (mensaje) {
-    mensaje.leido = true;
-  }
-  
+  if (mensaje) mensaje.leido = true;
   res.json({ success: true });
 });
 
-// Marcar todos los mensajes como leídos
 app.patch(`${API_URL}/mensajes/:userId/leer-todos`, async (req, res) => {
   const { userId } = req.params;
-  
   mensajes
-    .filter(m => m.destinatarioId === parseInt(userId) || m.destinatarioId === 'todos')
+    .filter(m => String(m.destinatarioId) === String(userId) || m.destinatarioId === 'todos')
     .forEach(m => m.leido = true);
-  
   res.json({ success: true });
 });
 
-// Compatibilidad con sistema antiguo de notificaciones
 app.get(`${API_URL}/notifications/:userId`, async (req, res) => {
   const { userId } = req.params;
-  const userNotif = notificaciones.filter(n => n.usuario_id === parseInt(userId));
+  const userNotif = notificaciones.filter(n => String(n.usuario_id) === String(userId));
   res.json({ notificaciones: userNotif });
 });
 
@@ -334,22 +278,21 @@ app.get(`${API_URL}/cancelaciones`, async (req, res) => {
   res.json({ cancelaciones });
 });
 
-// NUEVO: Obtener cancelaciones de un usuario específico
 app.get(`${API_URL}/cancelaciones/usuario/:userId`, async (req, res) => {
   const { userId } = req.params;
   const userCancelaciones = cancelaciones.filter(c => 
-    c.cancelado_por === parseInt(userId)
+    String(c.cancelado_por) === String(userId)
   );
   res.json({ cancelaciones: userCancelaciones });
 });
 
 // ==========================================
-// OTROS (HORARIO, ANALÍTICA)
+// OTROS (HORARIO, ANALÍTICA, ADMIN)
 // ==========================================
 app.get(`${API_URL}/schedule/:userId`, async (req, res) => {
   const { userId } = req.params;
   const horario = reservas
-    .filter(r => r.usuarioId === parseInt(userId) && r.estado === 'confirmada')
+    .filter(r => String(r.usuarioId) === String(userId) && r.estado === 'confirmada')
     .map(r => ({
       id: r.id,
       dia: r.dia,
@@ -379,11 +322,32 @@ app.get(`${API_URL}/analytics/prediccion`, async (req, res) => {
   ]});
 });
 
+// Endpoints Admin (Sin devolver usuarios)
+app.get(`${API_URL}/admin/stats`, async (req, res) => {
+  const totalReservas = reservas.filter(r => r.estado === 'confirmada').length;
+  const totalSalas = Object.values(CONFIGURACION_PISOS)
+    .reduce((acc, piso) => acc + (piso.salas?.filter(s => s.tipo === 'sala').length || 0), 0);
+  
+  const salasOcupadas = [...new Set(reservas.map(r => r.salaId))].length;
+  const ocupacionPromedio = totalSalas > 0 ? ((salasOcupadas / totalSalas) * 100).toFixed(1) : 0;
+
+  res.json({
+    totalReservas,
+    totalSalas,
+    salasDisponibles: totalSalas - salasOcupadas,
+    ocupacionPromedio
+  });
+});
+
+app.get(`${API_URL}/admin/reservas`, async (req, res) => {
+  res.json({ reservas });
+});
+
 module.exports = app;
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`✅ Servidor en http://localhost:${PORT}`);
+    console.log(`✅ Servidor (Sin Auth Local) en http://localhost:${PORT}`);
   });
 }

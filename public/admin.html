@@ -18,36 +18,98 @@
   </header>
 
   <main class="admin-container">
+    <!-- Estadísticas principales -->
     <div class="stats-grid">
       <div class="stat-card">
-        <h3>Reservas Activas</h3>
-        <p class="stat-number" id="total-reservas">0</p>
+        <div class="stat-icon">📅</div>
+        <div class="stat-content">
+          <h3>Reservas Activas</h3>
+          <p class="stat-number" id="total-reservas">0</p>
+        </div>
       </div>
+      
       <div class="stat-card">
-        <h3>Ocupación Promedio</h3>
-        <p class="stat-number" id="ocupacion">0%</p>
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+          <h3>Ocupación Promedio</h3>
+          <p class="stat-number" id="ocupacion">0%</p>
+        </div>
       </div>
+      
       <div class="stat-card">
-        <h3>Salas Disponibles</h3>
-        <p class="stat-number" id="salas-disponibles">0</p>
+        <div class="stat-icon">🏫</div>
+        <div class="stat-content">
+          <h3>Salas Disponibles</h3>
+          <p class="stat-number" id="salas-disponibles">0</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">❌</div>
+        <div class="stat-content">
+          <h3>Cancelaciones</h3>
+          <p class="stat-number" id="total-cancelaciones">0</p>
+        </div>
       </div>
     </div>
 
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h3>Heatmap de Uso por Piso</h3>
-        <canvas id="heatmapChart"></canvas>
-      </div>
+    <!-- Tabs de navegación -->
+    <div class="admin-tabs">
+      <button class="tab-btn active" data-tab="overview">📈 Resumen</button>
+      <button class="tab-btn" data-tab="reservas">📅 Reservas</button>
+      <button class="tab-btn" data-tab="salas">🏫 Salas</button>
+      <button class="tab-btn" data-tab="usuarios">👥 Usuarios</button>
+      <button class="tab-btn" data-tab="analytics">📊 Analítica</button>
+    </div>
 
-      <div class="chart-card">
-        <h3>Predicción de Demanda</h3>
-        <canvas id="prediccionChart"></canvas>
+    <!-- Contenido de tabs -->
+    <div class="tab-content active" id="overview">
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Heatmap de Uso por Piso</h3>
+          <canvas id="heatmapChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+          <h3>Reservas por Día</h3>
+          <canvas id="reservasDiaChart"></canvas>
+        </div>
       </div>
     </div>
 
-    <div class="table-card">
-      <h3>Historial de Cancelaciones</h3>
-      <div id="tabla-cancelaciones"></div>
+    <div class="tab-content" id="reservas">
+      <div class="table-card">
+        <h3>Todas las Reservas</h3>
+        <div id="tabla-reservas"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="salas">
+      <div class="table-card">
+        <h3>Estado de Salas</h3>
+        <div id="tabla-salas"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="usuarios">
+      <div class="table-card">
+        <h3>Usuarios Registrados</h3>
+        <div id="tabla-usuarios"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="analytics">
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Predicción de Demanda</h3>
+          <canvas id="prediccionChart"></canvas>
+        </div>
+
+        <div class="table-card">
+          <h3>Historial de Cancelaciones</h3>
+          <div id="tabla-cancelaciones"></div>
+        </div>
+      </div>
     </div>
   </main>
 
