@@ -14,6 +14,33 @@ let reservas = [];
 let notificaciones = [];
 let cancelaciones = [];
 
+// --- CONFIGURACIÓN DE PISOS (Necesaria para el nuevo endpoint /salas/todas) ---
+// Puedes mover esto a un archivo separado 'config.js' y requerirlo.
+const CONFIGURACION_PISOS = {
+  1: { 
+    nombre: "Primer Piso", 
+    salas: [
+      { id: 101, numero: '101', tipo: 'sala', capacidad: 40 },
+      { id: 102, numero: '102', tipo: 'sala', capacidad: 35 }
+    ] 
+  },
+  2: { 
+    nombre: "Segundo Piso", 
+    salas: [
+      { id: 201, numero: '201', tipo: 'sala', capacidad: 30 },
+      { id: 202, numero: '202', tipo: 'laboratorio', capacidad: 25 }
+    ] 
+  },
+  3: { 
+    nombre: "Tercer Piso", 
+    salas: [
+      { id: 301, numero: '301', tipo: 'sala', capacidad: 50 },
+      { id: 302, numero: '302', tipo: 'sala', capacidad: 45 }
+    ] 
+  }
+};
+// -----------------------------------------------------------------------------
+
 // ========== AUTENTICACIÓN ==========
 app.post(`${API_URL}/auth/login`, async (req, res) => {
   const { email, password } = req.body;
@@ -72,6 +99,11 @@ app.get(`${API_URL}/reservations`, async (req, res) => {
   }
   
   res.json(resultado);
+});
+
+// ✅ NUEVO ENDPOINT: Obtener todas las reservas (sin filtros)
+app.get(`${API_URL}/reservations/todas`, async (req, res) => {
+  res.json(reservas);
 });
 
 app.post(`${API_URL}/reservations`, async (req, res) => {
@@ -148,6 +180,48 @@ app.delete(`${API_URL}/reservations/:id`, async (req, res) => {
   res.json({ success: true });
 });
 
+// ========== SALAS ==========
+
+// ✅ NUEVO ENDPOINT: Obtener todas las salas (flattened)
+app.get(`${API_URL}/salas/todas`, async (req, res) => {
+  const todasLasSalas = [];
+  
+  try {
+    // Cargar salas de todos los pisos definidos en CONFIGURACION_PISOS
+    Object.keys(CONFIGURACION_PISOS).forEach(piso => {
+      const config = CONFIGURACION_PISOS[piso];
+      if (config.salas) {
+        // Agregamos la propiedad 'piso' a cada sala para saber de dónde viene
+        const salasDelPiso = config.salas
+          .filter(s => s.tipo === 'sala' || s.tipo === 'laboratorio')
+          .map(s => ({ ...s, piso: parseInt(piso) }));
+          
+        todasLasSalas.push(...salasDelPiso);
+      }
+    });
+
+    res.json(todasLasSalas);
+  } catch (error) {
+    console.error("Error al obtener salas:", error);
+    res.status(500).json({ error: "Error interno al procesar salas" });
+  }
+});
+
+// ========== BÚSQUEDA INTELIGENTE CON ALGORITMO ==========
+app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
+  const { capacidadMinima, requiereComputadores, requiereProyector, dia, horario } = req.body;
+
+  // Ejemplo básico usando las salas definidas arriba
+  // En producción, esto debería filtrar 'CONFIGURACION_PISOS' real
+  
+  const salasDisponibles = [
+    { id: 101, numero: '101', capacidad: 40, tiene_computadores: true, tiene_proyector: true, piso: 1, score: 95 },
+    { id: 201, numero: '201', capacidad: 30, tiene_computadores: false, tiene_proyector: true, piso: 2, score: 85 }
+  ];
+
+  res.json({ salas: salasDisponibles, algoritmo: 'heuristica_v1' });
+});
+
 // ========== HORARIO ==========
 app.get(`${API_URL}/schedule/:userId`, async (req, res) => {
   const { userId } = req.params;
@@ -161,7 +235,7 @@ app.get(`${API_URL}/schedule/:userId`, async (req, res) => {
       horaFin: r.horaFin,
       asignatura: r.asignatura,
       sala: r.salaId,
-      nombreSala: `Sala ${r.salaId}`,
+      nombreSala: `Sala ${r.salaId}`, // Podrías mejorar esto buscando en CONFIGURACION_PISOS
       profesor: r.profesor
     }));
 
@@ -194,24 +268,8 @@ app.get(`${API_URL}/cancelaciones`, async (req, res) => {
   res.json({ cancelaciones });
 });
 
-// ========== BÚSQUEDA INTELIGENTE CON ALGORITMO ==========
-app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
-  const { capacidadMinima, requiereComputadores, requiereProyector, dia, horario } = req.body;
-
-  // Aquí implementarías el algoritmo de asignación
-  // Por ahora devuelvo un ejemplo
-
-  const salasDisponibles = [
-    { id: 1, numero: '101', capacidad: 50, tiene_computadores: true, tiene_proyector: true, piso: 1, score: 95 },
-    { id: 2, numero: '102', capacidad: 35, tiene_computadores: false, tiene_proyector: true, piso: 1, score: 85 }
-  ];
-
-  res.json({ salas: salasDisponibles, algoritmo: 'heuristica_v1' });
-});
-
 // ========== ANALÍTICA PREDICTIVA ==========
 app.get(`${API_URL}/analytics/heatmap`, async (req, res) => {
-  // Calcular zonas calientes y frías
   const heatmap = {
     piso1: { uso: 75, tendencia: 'alta' },
     piso2: { uso: 90, tendencia: 'alta' },

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asignación Inteligente de Salas</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/asignacion.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>🤖 Asignación Inteligente de Salas</h1>
+    <div class="user-info">
+      <span id="user-name"></span>
+      <button onclick="logout()" class="btn-secondary">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="asignacion-container">
+    <!-- Panel de Configuración -->
+    <div class="config-panel">
+      <h2>🎯 Configuración de Requisitos</h2>
+      
+      <form id="form-asignacion">
+        <div class="form-section">
+          <h3>📚 Información de la Clase</h3>
+          
+          <div class="form-group">
+            <label for="asignatura-codigo">Código Asignatura:</label>
+            <input type="text" id="asignatura-codigo" required placeholder="Ej: MAT101" />
+          </div>
+
+          <div class="form-group">
+            <label for="asignatura-nombre">Nombre Asignatura:</label>
+            <input type="text" id="asignatura-nombre" required placeholder="Ej: Cálculo I" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="dia">Día:</label>
+              <select id="dia" required>
+                <option value="">Seleccionar...</option>
+                <option value="lunes">Lunes</option>
+                <option value="martes">Martes</option>
+                <option value="miércoles">Miércoles</option>
+                <option value="jueves">Jueves</option>
+                <option value="viernes">Viernes</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="horario">Horario:</label>
+              <select id="horario" required>
+                <option value="">Seleccionar...</option>
+                <option value="08:00-09:35">08:00 - 09:35</option>
+                <option value="09:40-11:15">09:40 - 11:15</option>
+                <option value="11:20-12:55">11:20 - 12:55</option>
+                <option value="14:00-15:35">14:00 - 15:35</option>
+                <option value="15:40-17:15">15:40 - 17:15</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>👥 Requisitos de Capacidad</h3>
+          
+          <div class="form-group">
+            <label for="num-estudiantes">Número de Estudiantes:</label>
+            <input type="number" id="num-estudiantes" required min="1" placeholder="Ej: 35" />
+            <small>Sistema recomendará salas con capacidad óptima</small>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="margen-seguridad" checked />
+              Agregar margen de seguridad (10%)
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>🖥️ Recursos Requeridos</h3>
+          
+          <div class="checkbox-grid">
+            <label class="checkbox-card">
+              <input type="checkbox" id="req-proyector" />
+              <div class="checkbox-content">
+                <span class="icon">📽️</span>
+                <span>Proyector</span>
+              </div>
+            </label>
+
+            <label class="checkbox-card">
+              <input type="checkbox" id="req-computadores" />
+              <div class="checkbox-content">
+                <span class="icon">💻</span>
+                <span>Computadores</span>
+              </div>
+            </label>
+
+            <label class="checkbox-card">
+              <input type="checkbox" id="req-aire" />
+              <div class="checkbox-content">
+                <span class="icon">❄️</span>
+                <span>Aire Acondicionado</span>
+              </div>
+            </label>
+
+            <label class="checkbox-card">
+              <input type="checkbox" id="req-pizarra-digital" />
+              <div class="checkbox-content">
+                <span class="icon">📱</span>
+                <span>Pizarra Digital</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>🎛️ Preferencias de Optimización</h3>
+          
+          <div class="form-group">
+            <label for="algoritmo">Algoritmo de Asignación:</label>
+            <select id="algoritmo">
+              <option value="best-fit">Best Fit - Minimizar desperdicio de espacio</option>
+              <option value="load-balance">Equilibrio de Carga - Distribuir uso entre pisos</option>
+              <option value="proximity">Proximidad - Agrupar clases relacionadas</option>
+              <option value="predictive" selected>Predictivo - Basado en patrones históricos</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="prioridad-piso">Preferencia de Piso:</label>
+            <select id="prioridad-piso">
+              <option value="">Sin preferencia</option>
+              <option value="1">Piso 1</option>
+              <option value="2">Piso 2</option>
+              <option value="3">Piso 3</option>
+              <option value="4">Piso 4</option>
+              <option value="5">Piso 5</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="evitar-adyacentes" />
+              Evitar salas adyacentes a clases ruidosas
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="accesibilidad" />
+              Priorizar accesibilidad (ascensores, rampas)
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-large">
+          🚀 Buscar Sala Óptima
+        </button>
+      </form>
+    </div>
+
+    <!-- Panel de Resultados -->
+    <div id="resultados-panel" class="resultados-panel" style="display: none;">
+      <h2>📊 Resultados de Asignación Inteligente</h2>
+      
+      <div class="algoritmo-info">
+        <span id="algoritmo-usado"></span>
+        <span id="tiempo-procesamiento"></span>
+      </div>
+
+      <div id="sala-recomendada" class="sala-recomendada-card"></div>
+
+      <div class="alternativas-section">
+        <h3>Alternativas Disponibles</h3>
+        <div id="alternativas-list"></div>
+      </div>
+
+      <div class="insights-section">
+        <h3>💡 Insights del Sistema</h3>
+        <div id="insights-list"></div>
+      </div>
+
+      <div class="acciones-panel">
+        <button id="btn-confirmar-asignacion" class="btn-primary">
+          ✅ Confirmar Asignación
+        </button>
+        <button onclick="nuevaBusqueda()" class="btn-secondary">
+          🔄 Nueva Búsqueda
+        </button>
+      </div>
+    </div>
+
+    <!-- Visualización de Estadísticas -->
+    <div class="stats-panel">
+      <h3>📈 Estadísticas de Ocupación en Tiempo Real</h3>
+      <canvas id="ocupacion-chart"></canvas>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/algoritmos-asignacion.js"></script>
+  <script src="js/asignacion-inteligente.js"></script>
+</body>
+</html>
