@@ -78,7 +78,7 @@ const CONFIGURACION_PISOS = {
         tiene_computadores: false,
         tiene_proyector: true
       },
-      // Baños y escaleras (no seleccionables)
+      // Baños y escaleras
       {
         id: "baño-1h",
         numero: "♂",
