@@ -17,22 +17,59 @@
   </header>
 
   <main class="perfil-container">
+    <!-- Información del Usuario -->
     <div class="perfil-card">
       <h2>Información Personal</h2>
       <div id="info-usuario"></div>
     </div>
 
+    <!-- Mensajes/Avisos de Clases (NUEVA SECCIÓN) -->
+    <div class="mensajes-card">
+      <div class="mensajes-header">
+        <h2>📬 Mensajes y Avisos</h2>
+        <button onclick="marcarTodosLeidos()" class="btn-secondary btn-small">
+          Marcar todos como leídos
+        </button>
+      </div>
+      <div id="lista-mensajes"></div>
+    </div>
+
+    <!-- Notificaciones del Sistema -->
     <div class="notificaciones-card">
-      <h2>Notificaciones <span id="badge-notif" class="badge">0</span></h2>
+      <h2>🔔 Notificaciones del Sistema</h2>
       <div id="lista-notificaciones"></div>
     </div>
 
+    <!-- Historial de Cancelaciones -->
     <div class="historial-card">
-      <h2>Historial de Cancelaciones</h2>
+      <h2>📋 Historial de Cancelaciones</h2>
       <div id="historial-cancelaciones"></div>
     </div>
 
-    <a href="schedule.html" class="btn-primary">Ver Mi Horario</a>
+    <!-- Panel de Envío de Mensajes (SOLO PROFESORES) -->
+    <div id="panel-enviar-mensaje" class="enviar-mensaje-card" style="display: none;">
+      <h2>📤 Enviar Aviso de Cancelación</h2>
+      <form id="form-enviar-mensaje">
+        <div class="form-group">
+          <label for="clase-select">Seleccionar Clase:</label>
+          <select id="clase-select" required>
+            <option value="">Cargando tus clases...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="motivo-cancelacion">Motivo de la Cancelación:</label>
+          <textarea id="motivo-cancelacion" required rows="4" placeholder="Ej: Reunión urgente, problema de salud, etc."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary">Enviar Aviso y Cancelar Clase</button>
+      </form>
+    </div>
+
+    <div class="acciones-perfil">
+      <a href="blueprint.html" class="btn-secondary">← Volver al Blueprint</a>
+      <a href="schedule.html" class="btn-primary">📅 Ver Mi Horario</a>
+    </div>
   </main>
 
   <script src="js/perfil.js"></script>

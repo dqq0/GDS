@@ -1,0 +1,209 @@
+.perfil-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+  display: grid;
+  gap: 20px;
+}
+
+.perfil-card,
+.mensajes-card,
+.notificaciones-card,
+.historial-card,
+.enviar-mensaje-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.mensajes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn-small {
+  padding: 8px 15px;
+  font-size: 0.9em;
+}
+
+#info-usuario p {
+  margin: 10px 0;
+  font-size: 1.1em;
+}
+
+.badge-rol {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+/* MENSAJES Y AVISOS */
+#lista-mensajes,
+#lista-notificaciones {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.mensaje-item,
+.notif-item {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.mensaje-item.no-leido {
+  border-color: #3498db;
+  background: #e3f2fd;
+}
+
+.mensaje-item.leido {
+  opacity: 0.7;
+}
+
+.mensaje-header,
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.mensaje-tipo,
+.notif-tipo {
+  background: #e74c3c;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.mensaje-fecha,
+.notif-fecha {
+  color: #666;
+  font-size: 0.85em;
+}
+
+.mensaje-contenido {
+  margin: 10px 0;
+}
+
+.mensaje-clase {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 1.1em;
+}
+
+.mensaje-motivo {
+  margin-top: 5px;
+  padding: 10px;
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  border-radius: 4px;
+}
+
+.mensaje-profesor {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.badge-nuevo {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #e74c3c;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.75em;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+  animation: pulse 2s infinite;
+}
+
+/* HISTORIAL */
+#historial-cancelaciones table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#historial-cancelaciones th,
+#historial-cancelaciones td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+#historial-cancelaciones th {
+  background: #f8f9fa;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+#historial-cancelaciones tr:hover {
+  background: #f8f9fa;
+}
+
+/* ENVIAR MENSAJE */
+.enviar-mensaje-card {
+  border: 2px solid #3498db;
+}
+
+.enviar-mensaje-card h2 {
+  color: #3498db;
+}
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.3s;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* ACCIONES */
+.acciones-perfil {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 30px;
+  font-style: italic;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .mensajes-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .acciones-perfil {
+    flex-direction: column;
+  }
+}

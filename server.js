@@ -9,13 +9,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Base de datos en memoria (reemplazar con Supabase)
+// ==========================================
+// BASE DE DATOS EN MEMORIA
+// ==========================================
 let reservas = [];
-let notificaciones = [];
+let notificaciones = []; // Notificaciones simples sistema antiguo
 let cancelaciones = [];
+let mensajes = [];       // NUEVO: Sistema de mensajería del fix
 
-// --- CONFIGURACIÓN DE PISOS (Necesaria para el nuevo endpoint /salas/todas) ---
-// Puedes mover esto a un archivo separado 'config.js' y requerirlo.
+// ==========================================
+// CONFIGURACIÓN DE PISOS
+// ==========================================
 const CONFIGURACION_PISOS = {
   1: { 
     nombre: "Primer Piso", 
@@ -39,17 +43,16 @@ const CONFIGURACION_PISOS = {
     ] 
   }
 };
-// -----------------------------------------------------------------------------
 
-// ========== AUTENTICACIÓN ==========
+// ==========================================
+// AUTENTICACIÓN
+// ==========================================
 app.post(`${API_URL}/auth/login`, async (req, res) => {
   const { email, password } = req.body;
-
   const emailLower = email.toLowerCase().trim();
   
-  // ✅ DETERMINAR ROL CORRECTAMENTE
+  // Determinar rol
   let rol = 'alumno';
-  
   if (emailLower.includes('admin') || emailLower.includes('administrador')) {
     rol = 'admin';
   } else if (emailLower.includes('profe') || emailLower.endsWith('@academicos.uta.cl')) {
@@ -75,7 +78,7 @@ app.post(`${API_URL}/auth/login`, async (req, res) => {
 
   res.json({
     user: {
-      id: Date.now(),
+      id: Date.now(), // Simulación de ID único
       nombre: usuario.nombre,
       email: emailLower,
       rol: usuario.rol,
@@ -84,32 +87,43 @@ app.post(`${API_URL}/auth/login`, async (req, res) => {
   });
 });
 
-// ========== RESERVACIONES ==========
+// ==========================================
+// RESERVACIONES (GENERAL Y PROFESOR)
+// ==========================================
+
+// Obtener reservas con filtros
 app.get(`${API_URL}/reservations`, async (req, res) => {
   const { dia, piso } = req.query;
-  
   let resultado = reservas.filter(r => r.estado === 'confirmada');
   
-  if (dia) {
-    resultado = resultado.filter(r => r.dia === dia);
-  }
-  
-  if (piso) {
-    resultado = resultado.filter(r => r.piso === parseInt(piso));
-  }
+  if (dia) resultado = resultado.filter(r => r.dia === dia);
+  if (piso) resultado = resultado.filter(r => r.piso === parseInt(piso));
   
   res.json(resultado);
 });
 
-// ✅ NUEVO ENDPOINT: Obtener todas las reservas (sin filtros)
+// Obtener todas las reservas (sin filtros)
 app.get(`${API_URL}/reservations/todas`, async (req, res) => {
   res.json(reservas);
 });
 
+// NUEVO: Obtener reservas de un profesor específico
+app.get(`${API_URL}/reservations/profesor/:userId`, async (req, res) => {
+  const { userId } = req.params;
+  
+  const reservasProfesor = reservas.filter(r => 
+    r.usuarioId === parseInt(userId) && 
+    r.estado === 'confirmada'
+  );
+  
+  res.json({ reservas: reservasProfesor });
+});
+
+// Crear nueva reserva
 app.post(`${API_URL}/reservations`, async (req, res) => {
   const { salaId, usuarioId, dia, horaInicio, horaFin, asignatura, piso, profesor } = req.body;
 
-  // ✅ VALIDAR CONFLICTOS
+  // Validar conflictos
   const conflicto = reservas.find(r => 
     r.salaId === salaId &&
     r.dia === dia &&
@@ -124,7 +138,6 @@ app.post(`${API_URL}/reservations`, async (req, res) => {
     });
   }
 
-  // ✅ CREAR RESERVA
   const nuevaReserva = {
     id: Date.now(),
     salaId,
@@ -140,23 +153,20 @@ app.post(`${API_URL}/reservations`, async (req, res) => {
   };
 
   reservas.push(nuevaReserva);
-
   res.status(201).json({ success: true, reserva: nuevaReserva });
 });
 
+// Cancelación Normal (Administrativa)
 app.delete(`${API_URL}/reservations/:id`, async (req, res) => {
   const { id } = req.params;
   const { motivo, canceladoPor } = req.body;
   
   const index = reservas.findIndex(r => r.id === parseInt(id));
-  
-  if (index === -1) {
-    return res.status(404).json({ error: 'Reserva no encontrada' });
-  }
+  if (index === -1) return res.status(404).json({ error: 'Reserva no encontrada' });
 
   const reserva = reservas[index];
   
-  // ✅ REGISTRAR CANCELACIÓN
+  // Registrar cancelación
   cancelaciones.push({
     id: Date.now(),
     reserva_id: parseInt(id),
@@ -165,7 +175,7 @@ app.delete(`${API_URL}/reservations/:id`, async (req, res) => {
     cancelado_por: canceladoPor || reserva.usuarioId
   });
 
-  // ✅ CREAR NOTIFICACIÓN
+  // Notificación simple
   notificaciones.push({
     id: Date.now(),
     usuario_id: reserva.usuarioId,
@@ -176,56 +186,168 @@ app.delete(`${API_URL}/reservations/:id`, async (req, res) => {
   });
 
   reservas.splice(index, 1);
-
   res.json({ success: true });
 });
 
-// ========== SALAS ==========
+// NUEVO: Cancelar con Aviso (Para Profesores)
+app.delete(`${API_URL}/reservations/:id/cancelar-con-aviso`, async (req, res) => {
+  const { id } = req.params;
+  const { motivo, canceladoPor, asignatura, dia, horario, sala, profesor } = req.body;
+  
+  const index = reservas.findIndex(r => r.id === parseInt(id));
+  
+  if (index === -1) {
+    return res.status(404).json({ error: 'Reserva no encontrada' });
+  }
 
-// ✅ NUEVO ENDPOINT: Obtener todas las salas (flattened)
+  const reserva = reservas[index];
+  
+  // Registrar cancelación
+  cancelaciones.push({
+    id: Date.now(),
+    reserva_id: parseInt(id),
+    fecha_cancelacion: new Date().toISOString(),
+    motivo: motivo || 'Sin motivo',
+    cancelado_por: canceladoPor,
+    asignatura: reserva.asignatura
+  });
+
+  // Crear mensaje para TODOS los estudiantes (simulación)
+  // Nota: Usamos destinatarioId: 'todos' para que el frontend lo capture globalmente
+  const mensaje = {
+    id: Date.now(),
+    destinatarioId: 'todos', 
+    tipo: 'cancelacion',
+    asignatura,
+    dia,
+    horario,
+    sala: `Sala ${sala}`,
+    motivo,
+    profesor,
+    fecha: new Date().toISOString(),
+    leido: false
+  };
+  
+  mensajes.push(mensaje);
+
+  // Eliminar reserva
+  reservas.splice(index, 1);
+
+  res.json({ 
+    success: true, 
+    mensaje: 'Clase cancelada y avisos enviados',
+    mensajesEnviados: 1 
+  });
+});
+
+// ==========================================
+// SALAS Y BÚSQUEDA
+// ==========================================
 app.get(`${API_URL}/salas/todas`, async (req, res) => {
   const todasLasSalas = [];
-  
   try {
-    // Cargar salas de todos los pisos definidos en CONFIGURACION_PISOS
     Object.keys(CONFIGURACION_PISOS).forEach(piso => {
       const config = CONFIGURACION_PISOS[piso];
       if (config.salas) {
-        // Agregamos la propiedad 'piso' a cada sala para saber de dónde viene
         const salasDelPiso = config.salas
           .filter(s => s.tipo === 'sala' || s.tipo === 'laboratorio')
           .map(s => ({ ...s, piso: parseInt(piso) }));
-          
         todasLasSalas.push(...salasDelPiso);
       }
     });
-
     res.json(todasLasSalas);
   } catch (error) {
     console.error("Error al obtener salas:", error);
-    res.status(500).json({ error: "Error interno al procesar salas" });
+    res.status(500).json({ error: "Error interno" });
   }
 });
 
-// ========== BÚSQUEDA INTELIGENTE CON ALGORITMO ==========
 app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
-  const { capacidadMinima, requiereComputadores, requiereProyector, dia, horario } = req.body;
-
-  // Ejemplo básico usando las salas definidas arriba
-  // En producción, esto debería filtrar 'CONFIGURACION_PISOS' real
-  
+  // Simulación de algoritmo
   const salasDisponibles = [
     { id: 101, numero: '101', capacidad: 40, tiene_computadores: true, tiene_proyector: true, piso: 1, score: 95 },
     { id: 201, numero: '201', capacidad: 30, tiene_computadores: false, tiene_proyector: true, piso: 2, score: 85 }
   ];
-
   res.json({ salas: salasDisponibles, algoritmo: 'heuristica_v1' });
 });
 
-// ========== HORARIO ==========
-app.get(`${API_URL}/schedule/:userId`, async (req, res) => {
+// ==========================================
+// MENSAJES Y NOTIFICACIONES (SISTEMA NUEVO)
+// ==========================================
+
+// Obtener mensajes de un usuario (Incluye mensajes para 'todos')
+app.get(`${API_URL}/mensajes/:userId`, async (req, res) => {
   const { userId } = req.params;
   
+  const userMensajes = mensajes
+    .filter(m => m.destinatarioId === parseInt(userId) || m.destinatarioId === 'todos')
+    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  
+  res.json({ mensajes: userMensajes });
+});
+
+// Contar mensajes no leídos
+app.get(`${API_URL}/notifications/:userId/count`, async (req, res) => {
+  const { userId } = req.params;
+  
+  const count = mensajes.filter(m => 
+    (m.destinatarioId === parseInt(userId) || m.destinatarioId === 'todos') && !m.leido
+  ).length;
+  
+  res.json({ count });
+});
+
+// Marcar mensaje individual como leído
+app.patch(`${API_URL}/mensajes/:id/leer`, async (req, res) => {
+  const { id } = req.params;
+  
+  const mensaje = mensajes.find(m => m.id === parseInt(id));
+  if (mensaje) {
+    mensaje.leido = true;
+  }
+  
+  res.json({ success: true });
+});
+
+// Marcar todos los mensajes como leídos
+app.patch(`${API_URL}/mensajes/:userId/leer-todos`, async (req, res) => {
+  const { userId } = req.params;
+  
+  mensajes
+    .filter(m => m.destinatarioId === parseInt(userId) || m.destinatarioId === 'todos')
+    .forEach(m => m.leido = true);
+  
+  res.json({ success: true });
+});
+
+// Compatibilidad con sistema antiguo de notificaciones
+app.get(`${API_URL}/notifications/:userId`, async (req, res) => {
+  const { userId } = req.params;
+  const userNotif = notificaciones.filter(n => n.usuario_id === parseInt(userId));
+  res.json({ notificaciones: userNotif });
+});
+
+// ==========================================
+// CANCELACIONES E HISTORIAL
+// ==========================================
+app.get(`${API_URL}/cancelaciones`, async (req, res) => {
+  res.json({ cancelaciones });
+});
+
+// NUEVO: Obtener cancelaciones de un usuario específico
+app.get(`${API_URL}/cancelaciones/usuario/:userId`, async (req, res) => {
+  const { userId } = req.params;
+  const userCancelaciones = cancelaciones.filter(c => 
+    c.cancelado_por === parseInt(userId)
+  );
+  res.json({ cancelaciones: userCancelaciones });
+});
+
+// ==========================================
+// OTROS (HORARIO, ANALÍTICA)
+// ==========================================
+app.get(`${API_URL}/schedule/:userId`, async (req, res) => {
+  const { userId } = req.params;
   const horario = reservas
     .filter(r => r.usuarioId === parseInt(userId) && r.estado === 'confirmada')
     .map(r => ({
@@ -235,59 +357,26 @@ app.get(`${API_URL}/schedule/:userId`, async (req, res) => {
       horaFin: r.horaFin,
       asignatura: r.asignatura,
       sala: r.salaId,
-      nombreSala: `Sala ${r.salaId}`, // Podrías mejorar esto buscando en CONFIGURACION_PISOS
+      nombreSala: `Sala ${r.salaId}`,
       profesor: r.profesor
     }));
 
   res.json({ schedule: horario });
 });
 
-// ========== NOTIFICACIONES ==========
-app.get(`${API_URL}/notifications/:userId`, async (req, res) => {
-  const { userId } = req.params;
-  
-  const userNotif = notificaciones.filter(n => n.usuario_id === parseInt(userId));
-  
-  res.json({ notificaciones: userNotif });
-});
-
-app.patch(`${API_URL}/notifications/:id/read`, async (req, res) => {
-  const { id } = req.params;
-  
-  const notif = notificaciones.find(n => n.id === parseInt(id));
-  
-  if (notif) {
-    notif.leido = true;
-  }
-  
-  res.json({ success: true });
-});
-
-// ========== CANCELACIONES ==========
-app.get(`${API_URL}/cancelaciones`, async (req, res) => {
-  res.json({ cancelaciones });
-});
-
-// ========== ANALÍTICA PREDICTIVA ==========
 app.get(`${API_URL}/analytics/heatmap`, async (req, res) => {
-  const heatmap = {
+  res.json({ heatmap: {
     piso1: { uso: 75, tendencia: 'alta' },
     piso2: { uso: 90, tendencia: 'alta' },
-    piso3: { uso: 60, tendencia: 'media' },
-    piso4: { uso: 40, tendencia: 'baja' },
-    piso5: { uso: 30, tendencia: 'baja' }
-  };
-
-  res.json({ heatmap });
+    piso3: { uso: 60, tendencia: 'media' }
+  }});
 });
 
 app.get(`${API_URL}/analytics/prediccion`, async (req, res) => {
-  const predicciones = [
+  res.json({ predicciones: [
     { dia: 'martes', hora: '11:00', demanda: 'alta', recurso: 'proyector' },
     { dia: 'jueves', hora: '14:00', demanda: 'media', recurso: 'computadores' }
-  ];
-
-  res.json({ predicciones });
+  ]});
 });
 
 module.exports = app;

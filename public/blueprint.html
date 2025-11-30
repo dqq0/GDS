@@ -10,7 +10,9 @@
     <header class="header">
       <h1 id="titulo-piso">🏫 Plano de Salas - Piso 3</h1>
       <div class="user-info">
-        <span id="user-name"></span>
+        <span id="user-name" onclick="irAPerfil()">
+          <span id="notif-badge" class="notification-badge" style="display: none;">0</span>
+        </span>
         <button onclick="logout()" class="btn-secondary">
           Cerrar Sesión
         </button>
@@ -81,14 +83,13 @@
         >
           <image
             id="imagen-plano"
-            href="img/plano-piso2.png"
+            href="img/plano-piso3.png"
             width="800"
             height="600"
             opacity="0.3"
           />
 
           <g id="salas-layer"></g>
-
           <g id="labels-layer"></g>
         </svg>
 
@@ -107,13 +108,16 @@
       </div>
 
       <a href="schedule.html" class="btn-secondary btn-horario">
-        Ver Mi Horario
+        📅 Ver Mi Horario
       </a>
-    </main>
 
-    <a href="asistente.html" class="btn-primary btn-asistente">
-  🤖 Asistente Inteligente
-</a>
+      <!-- SOLO PARA PROFESORES Y AYUDANTES -->
+      <div id="profesor-actions" style="display: none;">
+        <a href="asignacion-inteligente.html" class="btn-primary btn-asistente">
+          🤖 Asignación Inteligente
+        </a>
+      </div>
+    </main>
 
     <div id="modal-reserva" class="modal" style="display: none">
       <div class="modal-content">
@@ -150,8 +154,9 @@
         </form>
       </div>
     </div>
-<script src="js/salas-config.js"></script>
-<script src="js/pisos-config.js"></script>
-<script src="js/blueprint-svg.js"></script>
+
+    <script src="js/salas-config.js"></script>
+    <script src="js/pisos-config.js"></script>
+    <script src="js/blueprint-svg.js"></script>
   </body>
 </html>
