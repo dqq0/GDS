@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Administración</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="header">
+    <h1>📊 Panel de Administración</h1>
+    <div class="user-info">
+      <span id="user-name"></span>
+      <button onclick="logout()" class="btn-secondary">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Reservas Activas</h3>
+        <p class="stat-number" id="total-reservas">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Ocupación Promedio</h3>
+        <p class="stat-number" id="ocupacion">0%</p>
+      </div>
+      <div class="stat-card">
+        <h3>Salas Disponibles</h3>
+        <p class="stat-number" id="salas-disponibles">0</p>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Heatmap de Uso por Piso</h3>
+        <canvas id="heatmapChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h3>Predicción de Demanda</h3>
+        <canvas id="prediccionChart"></canvas>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h3>Historial de Cancelaciones</h3>
+      <div id="tabla-cancelaciones"></div>
+    </div>
+  </main>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@ const API_URL = '/api';
 let currentUser = null;
 let selectedRoom = null;
 let reservaciones = [];
-let pisoActual = 2;
+let pisoActual = 2; // 
 
 window.onload = () => {
   const userStr = localStorage.getItem("user");
@@ -18,7 +18,12 @@ window.onload = () => {
 
   const selectPiso = document.getElementById('piso-select');
   if(selectPiso) {
-    pisoActual = parseInt(selectPiso.value);
+    // Si el select existe, respetamos su valor, si no, usamos el default 3
+    if (selectPiso.value) {
+        pisoActual = parseInt(selectPiso.value);
+    } else {
+        selectPiso.value = pisoActual;
+    }
   }
 
   cambiarPiso();
@@ -30,7 +35,9 @@ function cambiarPiso() {
       pisoActual = parseInt(select.value);
   }
 
-  if (!CONFIGURACION_PISOS[pisoActual]) {
+  // Verificamos si existe la configuración global (asumiendo que viene de otro script)
+  if (typeof CONFIGURACION_PISOS === 'undefined' || !CONFIGURACION_PISOS[pisoActual]) {
+    console.warn("Configuración de pisos no encontrada para el piso", pisoActual);
     return;
   }
 
@@ -42,8 +49,11 @@ function cambiarPiso() {
   const imagen = document.getElementById('imagen-plano');
   if(imagen) imagen.setAttribute('href', config.imagen);
 
-  document.getElementById('salas-layer').innerHTML = '';
-  document.getElementById('labels-layer').innerHTML = '';
+  const salasLayer = document.getElementById('salas-layer');
+  const labelsLayer = document.getElementById('labels-layer');
+
+  if(salasLayer) salasLayer.innerHTML = '';
+  if(labelsLayer) labelsLayer.innerHTML = '';
 
   inicializarPlano();
   actualizarPlano();
@@ -53,6 +63,8 @@ function inicializarPlano() {
   const salasLayer = document.getElementById("salas-layer");
   const labelsLayer = document.getElementById("labels-layer");
   
+  if (!salasLayer || !labelsLayer) return;
+
   const salasDelPiso = CONFIGURACION_PISOS[pisoActual].salas;
 
   salasDelPiso.forEach((sala) => {
@@ -94,10 +106,17 @@ function inicializarPlano() {
 }
 
 async function actualizarPlano() {
-  const dia = document.getElementById("dia-select").value;
-  const horario = document.getElementById("horario-select").value;
+  const diaElement = document.getElementById("dia-select");
+  const horarioElement = document.getElementById("horario-select");
+  
+  if (!diaElement || !horarioElement) return;
+
+  const dia = diaElement.value;
+  const horario = horarioElement.value;
   const [horaInicio] = horario.split("-").map((h) => h.trim());
-  const piso = document.getElementById("piso-select")?.value || 2;
+  
+  // Usamos pisoActual global
+  const piso = pisoActual;
 
   try {
     const response = await fetch(`${API_URL}/reservations?dia=${dia}&piso=${piso}`);
@@ -108,12 +127,12 @@ async function actualizarPlano() {
     
     reservaciones = await response.json();
 
-    const salasActuales = window.CONFIGURACION_PISOS 
+    const salasActuales = (window.CONFIGURACION_PISOS && CONFIGURACION_PISOS[piso]) 
       ? CONFIGURACION_PISOS[piso].salas 
-      : SALAS_PISO_2;
+      : [];
 
     salasActuales.forEach((sala) => {
-      if (sala.tipo !== "sala") return;
+      if (sala.tipo !== "sala" && sala.tipo !== "laboratorio") return;
 
       const polygon = document.querySelector(`[data-sala-id="${sala.id}"]`);
       if (!polygon) return;
@@ -136,13 +155,15 @@ async function actualizarPlano() {
       }
     });
   } catch (error) {
-    alert("⚠️ Error al cargar disponibilidad de salas");
+    console.error(error);
+    // Alert opcional, comentado para no spamear si falla al inicio
+    // alert("⚠️ Error al cargar disponibilidad de salas");
   }
 }
 
 function handleSalaClick(sala) {
   const polygon = document.querySelector(`[data-sala-id="${sala.id}"]`);
-  if (polygon.classList.contains("ocupada")) {
+  if (polygon && polygon.classList.contains("ocupada")) {
     alert("⚠️ Esta sala ya está ocupada en este horario");
     return;
   }
@@ -153,6 +174,8 @@ function handleSalaClick(sala) {
 
 function mostrarTooltip(event, sala) {
   const tooltip = document.getElementById("tooltip");
+  if (!tooltip) return;
+
   const reserva = reservaciones.find(
     (r) => r.salaId === sala.id && r.estado === "confirmada"
   );
@@ -175,14 +198,17 @@ function mostrarTooltip(event, sala) {
 }
 
 function ocultarTooltip() {
-  document.getElementById("tooltip").style.display = "none";
+  const tooltip = document.getElementById("tooltip");
+  if (tooltip) tooltip.style.display = "none";
 }
 
 function mostrarInfoSala(sala) {
   const infoDiv = document.getElementById("room-info");
   const btnReservar = document.getElementById("btn-reservar");
+  const roomTitle = document.getElementById("room-title");
+  const roomDetails = document.getElementById("room-details");
 
-  document.getElementById("room-title").textContent = `Sala ${sala.numero}`;
+  if (roomTitle) roomTitle.textContent = `Sala ${sala.numero}`;
 
   let detalles = `
     <p><strong>Tipo:</strong> ${sala.tipo === 'laboratorio' ? 'Laboratorio' : 'Aula Teórica'}</p>
@@ -190,36 +216,52 @@ function mostrarInfoSala(sala) {
     <p><strong>Recursos:</strong> ${sala.computadores ? 'Proyector, PC' : 'Proyector'}</p>
   `;
 
-  document.getElementById("room-details").innerHTML = detalles;
+  if (roomDetails) roomDetails.innerHTML = detalles;
   
-  btnReservar.style.display = "inline-block";
-  btnReservar.onclick = abrirModalReserva;
+  if (btnReservar) {
+      btnReservar.style.display = "inline-block";
+      btnReservar.onclick = abrirModalReserva;
+  }
 
-  infoDiv.style.display = "block";
+  if (infoDiv) infoDiv.style.display = "block";
 }
 
 function cerrarInfo() {
-  document.getElementById("room-info").style.display = "none";
+  const infoDiv = document.getElementById("room-info");
+  if (infoDiv) infoDiv.style.display = "none";
 }
 
 function abrirModalReserva() {
-  document.getElementById("modal-sala-numero").textContent = selectedRoom.numero;
-  document.getElementById("modal-reserva").style.display = "flex";
+  const modalNum = document.getElementById("modal-sala-numero");
+  const modal = document.getElementById("modal-reserva");
+  
+  if (modalNum) modalNum.textContent = selectedRoom.numero;
+  if (modal) modal.style.display = "flex";
 }
 
 function cerrarModal() {
-  document.getElementById("modal-reserva").style.display = "none";
-  document.getElementById("form-reserva").reset();
+  const modal = document.getElementById("modal-reserva");
+  const form = document.getElementById("form-reserva");
+  
+  if (modal) modal.style.display = "none";
+  if (form) form.reset();
 }
 
+// ✅ SISTEMA DE RESERVAS ACTUALIZADO (DEL FIX)
 document.getElementById("form-reserva").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const codigo = document.getElementById("asignatura-codigo").value;
-  const nombre = document.getElementById("asignatura-nombre").value;
+  const codigo = document.getElementById("asignatura-codigo").value.trim();
+  const nombre = document.getElementById("asignatura-nombre").value.trim();
   const dia = document.getElementById("dia-select").value;
   const horario = document.getElementById("horario-select").value;
   const [horaInicio, horaFin] = horario.split("-").map((h) => h.trim());
+
+  // Validaciones
+  if (!codigo || !nombre) {
+    alert("❌ Por favor completa todos los campos");
+    return;
+  }
 
   try {
     const response = await fetch(`${API_URL}/reservations`, {
@@ -233,6 +275,8 @@ document.getElementById("form-reserva").addEventListener("submit", async (e) => 
         horaFin,
         piso: pisoActual,
         asignatura: { codigo, nombre },
+        estado: "confirmada",
+        profesor: currentUser.nombre
       }),
     });
 
@@ -242,14 +286,26 @@ document.getElementById("form-reserva").addEventListener("submit", async (e) => 
       alert("✅ Reserva creada exitosamente");
       cerrarModal();
       cerrarInfo();
-      actualizarPlano();
+      
+      // ✅ AUTO-REFRESH AUTOMÁTICO
+      await actualizarPlano();
+      
+      // Scroll suave al plano (opcional si el elemento existe)
+      const planoSvg = document.getElementById('plano-svg');
+      if (planoSvg) {
+          planoSvg.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+      }
     } else if (response.status === 409) {
-      alert(`❌ CONFLICTO: ${data.error}`);
+      alert(`❌ CONFLICTO: ${data.error}\n\nEsta sala ya está ocupada en ese horario.`);
     } else {
       alert("❌ Error: " + data.error);
     }
   } catch (error) {
-    alert("❌ Error de conexión");
+    console.error("Error al crear reserva:", error);
+    alert("❌ Error de conexión con el servidor");
   }
 });
 

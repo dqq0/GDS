@@ -3,7 +3,7 @@ const API_URL = '/api';
 document.getElementById('login-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const email = document.getElementById('email').value;
+  const email = document.getElementById('email').value.trim().toLowerCase();
   const password = document.getElementById('password').value;
   const errorDiv = document.getElementById('error-message');
 
@@ -21,8 +21,11 @@ document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     if (response.ok) {
       localStorage.setItem('user', JSON.stringify(data.user));
 
+      // ✅ REDIRECCIÓN CORRECTA POR ROL
       if (data.user.rol === 'profesor' || data.user.rol === 'ayudante') {
         window.location.href = 'blueprint.html';
+      } else if (data.user.rol === 'admin') {
+        window.location.href = 'admin.html';
       } else {
         window.location.href = 'schedule.html';
       }
@@ -61,6 +64,8 @@ window.addEventListener('load', () => {
     const user = JSON.parse(userStr);
     if (user.rol === 'profesor' || user.rol === 'ayudante') {
       window.location.href = 'blueprint.html';
+    } else if (user.rol === 'admin') {
+      window.location.href = 'admin.html';
     } else {
       window.location.href = 'schedule.html';
     }

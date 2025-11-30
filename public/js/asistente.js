@@ -4,7 +4,6 @@ let currentUser = null;
 window.onload = () => {
   const userStr = localStorage.getItem('user');
   
-  // 1. Si no hay usuario, devolver al login
   if (!userStr) {
     window.location.href = 'index.html';
     return;
@@ -13,25 +12,20 @@ window.onload = () => {
   try {
     currentUser = JSON.parse(userStr);
   } catch (e) {
-    // Si el JSON está corrupto, limpiamos y mandamos al login
     localStorage.removeItem('user');
     window.location.href = 'index.html';
     return;
   }
 
-  // --- VALIDACIÓN DE ROL MEJORADA ---
-  // Convertimos el rol a minúsculas y quitamos espacios para evitar errores (ej: "Profesor " -> "profesor")
   const rolUsuario = (currentUser.rol || '').trim().toLowerCase();
   
-  // Lista blanca: Solo estos roles pueden ver esta página
-  const rolesPermitidos = ['profesor', 'docente', 'admin'];
+  const rolesPermitidos = ['profesor', 'docente', 'admin', 'ayudante'];
 
   if (!rolesPermitidos.includes(rolUsuario)) {
-    alert(`⚠️ Acceso denegado.\nTu rol es: "${currentUser.rol}".\nEsta función es exclusiva para profesores.`);
+    alert(`⚠️ Acceso denegado.\nTu rol es: "${currentUser.rol}".\nEsta función es exclusiva para profesores y ayudantes.`);
     window.location.href = 'schedule.html';
     return;
   }
-  // ----------------------------------
 
   const nombreDisplay = document.getElementById('user-name');
   if (nombreDisplay) {
@@ -42,10 +36,9 @@ window.onload = () => {
 document.getElementById('form-busqueda').addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const btnBuscar = e.target.querySelector('button[type="submit"]'); // Asumiendo que hay un botón submit
+  const btnBuscar = e.target.querySelector('button[type="submit"]'); 
   const textoOriginal = btnBuscar ? btnBuscar.innerText : 'Buscar';
 
-  // Desactivar botón para evitar doble click
   if (btnBuscar) {
     btnBuscar.disabled = true;
     btnBuscar.innerText = 'Buscando...';
@@ -83,7 +76,6 @@ document.getElementById('form-busqueda').addEventListener('submit', async (e) =>
     console.error(error);
     alert('❌ Error de conexión con el servidor');
   } finally {
-    // Reactivar botón
     if (btnBuscar) {
       btnBuscar.disabled = false;
       btnBuscar.innerText = textoOriginal;
@@ -106,11 +98,10 @@ function mostrarResultados(salas, capacidadSolicitada) {
   salas.forEach((sala, index) => {
     const desperdicio = sala.capacidad - capacidadSolicitada;
     
-    // Lógica de colores semáforo para el score
     const colorRecomendacion = 
-      sala.score >= 90 ? '#4caf50' : // Verde
-      sala.score >= 70 ? '#ff9800' : // Naranja
-      '#9e9e9e';                     // Gris
+      sala.score >= 90 ? '#4caf50' : 
+      sala.score >= 70 ? '#ff9800' : 
+      '#9e9e9e';                     
 
     html += `
       <div class="resultado-card" style="border-left: 5px solid ${colorRecomendacion};">
@@ -155,7 +146,6 @@ function mostrarResultados(salas, capacidadSolicitada) {
 
   lista.innerHTML = html;
   container.style.display = 'block';
-  // Scroll suave hacia los resultados
   container.scrollIntoView({ behavior: 'smooth' });
 }
 

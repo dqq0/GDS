@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Perfil</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/perfil.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>👤 Mi Perfil</h1>
+    <div class="user-info">
+      <span id="user-name"></span>
+      <button onclick="logout()" class="btn-secondary">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="perfil-container">
+    <div class="perfil-card">
+      <h2>Información Personal</h2>
+      <div id="info-usuario"></div>
+    </div>
+
+    <div class="notificaciones-card">
+      <h2>Notificaciones <span id="badge-notif" class="badge">0</span></h2>
+      <div id="lista-notificaciones"></div>
+    </div>
+
+    <div class="historial-card">
+      <h2>Historial de Cancelaciones</h2>
+      <div id="historial-cancelaciones"></div>
+    </div>
+
+    <a href="schedule.html" class="btn-primary">Ver Mi Horario</a>
+  </main>
+
+  <script src="js/perfil.js"></script>
+</body>
+</html>
