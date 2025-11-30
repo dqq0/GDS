@@ -1,14 +1,10 @@
-const API_URL = '/api'; // O tu URL completa si es necesario
+const API_URL = '/api';
 let currentUser = null;
 let selectedRoom = null;
 let reservaciones = [];
-let pisoActual = 2; // Valor por defecto (debe coincidir con el HTML selected)
+let pisoActual = 2;
 
-// ==========================================
-// 1. INICIALIZACIÓN Y AUTH
-// ==========================================
 window.onload = () => {
-  // Verificar Auth
   const userStr = localStorage.getItem("user");
   if (!userStr) {
     window.location.href = "index.html";
@@ -17,81 +13,60 @@ window.onload = () => {
 
   currentUser = JSON.parse(userStr);
   
-  // Actualizar nombre de usuario en el header
   const userNameElement = document.getElementById("user-name");
   if(userNameElement) userNameElement.textContent = `👤 ${currentUser.nombre}`;
 
-  // Detectar selección inicial del HTML
   const selectPiso = document.getElementById('piso-select');
   if(selectPiso) {
     pisoActual = parseInt(selectPiso.value);
   }
 
-  // Iniciar la vista
   cambiarPiso();
 };
 
-// ==========================================
-// 2. LÓGICA DE CAMBIO DE PISO
-// ==========================================
 function cambiarPiso() {
-  // 1. Obtener el valor del select
   const select = document.getElementById('piso-select');
   if(select) {
       pisoActual = parseInt(select.value);
   }
 
-  // 2. Validar que exista configuración para ese piso
   if (!CONFIGURACION_PISOS[pisoActual]) {
-    console.error(`No hay configuración para el piso ${pisoActual}`);
     return;
   }
 
-  // 3. Actualizar Título y Fondo
   const config = CONFIGURACION_PISOS[pisoActual];
   
-  // Cambiar texto del título H1
   const titulo = document.getElementById('titulo-piso');
   if(titulo) titulo.textContent = `🏫 Plano de Salas - ${config.nombre}`;
 
-  // Cambiar imagen de fondo del SVG
   const imagen = document.getElementById('imagen-plano');
   if(imagen) imagen.setAttribute('href', config.imagen);
 
-  // 4. Limpiar SVG actual (capas de salas y textos)
   document.getElementById('salas-layer').innerHTML = '';
   document.getElementById('labels-layer').innerHTML = '';
 
-  // 5. Redibujar y recargar datos
   inicializarPlano();
   actualizarPlano();
 }
 
-// ==========================================
-// 3. DIBUJAR EL PLANO (SVG)
-// ==========================================
 function inicializarPlano() {
   const salasLayer = document.getElementById("salas-layer");
   const labelsLayer = document.getElementById("labels-layer");
   
-  // OBTIENE LAS SALAS DEL PISO ACTUAL DINÁMICAMENTE
   const salasDelPiso = CONFIGURACION_PISOS[pisoActual].salas;
 
   salasDelPiso.forEach((sala) => {
-    // A) Crear el polígono (forma de la sala)
     const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
     polygon.setAttribute("points", sala.polygon);
     polygon.setAttribute("data-sala-id", sala.id);
     polygon.classList.add("sala-shape");
 
-    // B) Asignar clases según tipo
     if (sala.tipo === "baño") {
       polygon.classList.add("no-seleccionable", "tipo-baño");
     } else if (sala.tipo === "escalera") {
       polygon.classList.add("no-seleccionable", "tipo-escalera");
     } else {
       polygon.classList.add("seleccionable");
-      // Eventos
       polygon.addEventListener("click", () => handleSalaClick(sala));
       polygon.addEventListener("mouseenter", (e) => mostrarTooltip(e, sala));
       polygon.addEventListener("mouseleave", ocultarTooltip);
@@ -99,11 +74,9 @@ function inicializarPlano() {
 
     salasLayer.appendChild(polygon);
 
-    // C) Crear el texto (Label con número)
     if (sala.numero) {
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       
-      // Calcular centro geométrico para poner el texto
       const points = sala.polygon.split(" ").map((p) => p.split(",").map(Number));
       const centerX = points.reduce((sum, p) => sum + p[0], 0) / points.length;
       const centerY = points.reduce((sum, p) => sum + p[1], 0) / points.length;
@@ -120,9 +93,6 @@ function inicializarPlano() {
   });
 }
 
-// ==========================================
-// 4. ACTUALIZAR ESTADOS (API)
-// ==========================================
 async function actualizarPlano() {
   const dia = document.getElementById("dia-select").value;
   const horario = document.getElementById("horario-select").value;
@@ -138,7 +108,6 @@ async function actualizarPlano() {
     
     reservaciones = await response.json();
 
-    // Obtener la configuración de salas del piso actual
     const salasActuales = window.CONFIGURACION_PISOS 
       ? CONFIGURACION_PISOS[piso].salas 
       : SALAS_PISO_2;
@@ -156,28 +125,22 @@ async function actualizarPlano() {
           r.estado === "confirmada"
       );
 
-      // Remover clases previas
       polygon.classList.remove("disponible", "ocupada");
 
       if (estaOcupada) {
         polygon.classList.add("ocupada");
-        polygon.style.pointerEvents = "none"; // ✅ Deshabilitar click
+        polygon.style.pointerEvents = "none";
       } else {
         polygon.classList.add("disponible");
-        polygon.style.pointerEvents = "auto"; // ✅ Habilitar click
+        polygon.style.pointerEvents = "auto";
       }
     });
   } catch (error) {
-    console.error("Error al actualizar plano:", error);
     alert("⚠️ Error al cargar disponibilidad de salas");
   }
 }
-// ==========================================
-// 5. INTERACCIÓN (Click, Tooltip, Modal)
-// ==========================================
 
 function handleSalaClick(sala) {
-  // Doble chequeo de seguridad visual
   const polygon = document.querySelector(`[data-sala-id="${sala.id}"]`);
   if (polygon.classList.contains("ocupada")) {
     alert("⚠️ Esta sala ya está ocupada en este horario");
@@ -215,7 +178,6 @@ function ocultarTooltip() {
   document.getElementById("tooltip").style.display = "none";
 }
 
-// Panel Lateral
 function mostrarInfoSala(sala) {
   const infoDiv = document.getElementById("room-info");
   const btnReservar = document.getElementById("btn-reservar");
@@ -230,9 +192,8 @@ function mostrarInfoSala(sala) {
 
   document.getElementById("room-details").innerHTML = detalles;
   
-  // Mostrar botón reservar
   btnReservar.style.display = "inline-block";
-  btnReservar.onclick = abrirModalReserva; // Vincular evento
+  btnReservar.onclick = abrirModalReserva;
 
   infoDiv.style.display = "block";
 }
@@ -241,9 +202,6 @@ function cerrarInfo() {
   document.getElementById("room-info").style.display = "none";
 }
 
-// ==========================================
-// 6. GESTIÓN DE RESERVAS (Submit)
-// ==========================================
 function abrirModalReserva() {
   document.getElementById("modal-sala-numero").textContent = selectedRoom.numero;
   document.getElementById("modal-reserva").style.display = "flex";
@@ -273,7 +231,7 @@ document.getElementById("form-reserva").addEventListener("submit", async (e) => 
         dia,
         horaInicio,
         horaFin,
-        piso: pisoActual, // Importante guardar el piso
+        piso: pisoActual,
         asignatura: { codigo, nombre },
       }),
     });
@@ -284,14 +242,13 @@ document.getElementById("form-reserva").addEventListener("submit", async (e) => 
       alert("✅ Reserva creada exitosamente");
       cerrarModal();
       cerrarInfo();
-      actualizarPlano(); // Recargar colores
+      actualizarPlano();
     } else if (response.status === 409) {
       alert(`❌ CONFLICTO: ${data.error}`);
     } else {
       alert("❌ Error: " + data.error);
     }
   } catch (error) {
-    console.error("Error reserva:", error);
     alert("❌ Error de conexión");
   }
 });

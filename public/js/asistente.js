@@ -10,7 +10,6 @@ window.onload = () => {
 
   currentUser = JSON.parse(userStr);
 
-  // Solo profesores y ayudantes
   if (currentUser.rol === 'alumno') {
     alert('⚠️ Acceso denegado. Solo profesores pueden usar esta función.');
     window.location.href = 'schedule.html';
@@ -52,7 +51,6 @@ document.getElementById('form-busqueda').addEventListener('submit', async (e) =>
       alert('❌ Error: ' + data.error);
     }
   } catch (error) {
-    console.error('Error en búsqueda:', error);
     alert('❌ Error de conexión');
   }
 });
@@ -121,7 +119,6 @@ function mostrarResultados(salas, capacidadSolicitada) {
 }
 
 function reservarSala(salaId, salaNumero) {
-  // Redirigir al blueprint con la sala pre-seleccionada
   localStorage.setItem('salaPreseleccionada', salaId);
   window.location.href = 'blueprint.html';
 }
