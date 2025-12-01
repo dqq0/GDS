@@ -60,6 +60,14 @@ document.getElementById('form-asignacion').addEventListener('submit', async (e) 
     ? Math.ceil(numEstudiantes * 1.1) 
     : numEstudiantes;
 
+  // ⚡ LEER CHECKBOXES CORRECTAMENTE
+  const requiereProyector = document.getElementById('req-proyector').checked;
+  const requiereComputadores = document.getElementById('req-computadores').checked;
+
+  console.log('📋 Requisitos del usuario:');
+  console.log('- Proyector:', requiereProyector);
+  console.log('- Computadores:', requiereComputadores);
+
   const requisitos = {
     codigoAsignatura,
     nombreAsignatura,
@@ -67,8 +75,8 @@ document.getElementById('form-asignacion').addEventListener('submit', async (e) 
     horario,
     numEstudiantes,
     capacidadNecesaria,
-    requiereProyector: document.getElementById('req-proyector').checked,
-    requiereComputadores: document.getElementById('req-computadores').checked
+    requiereProyector,      // ⚡ Asegúrate de que se pase
+    requiereComputadores    // ⚡ Asegúrate de que se pase
   };
 
   await procesarBusqueda(requisitos);
@@ -103,62 +111,70 @@ function mostrarResultados(resultado) {
 
   // Sala recomendada por IA
   const salaRecomendadaDiv = document.getElementById('sala-recomendada');
-  
+
   if (resultado.mejorOpcion) {
-    const sala = resultado.mejorOpcion;
-    const ratioOcupacion = ((resultado.requisitos.capacidadNecesaria / sala.capacidad) * 100).toFixed(0);
+  const sala = resultado.mejorOpcion;
+  const ratioOcupacion = ((resultado.requisitos.capacidadNecesaria / sala.capacidad) * 100).toFixed(0);
+  
+  salaRecomendadaDiv.innerHTML = `
+    <div class="recomendacion-badge">
+      <span class="ia-icon">🤖</span>
+      <span>RECOMENDACIÓN IA</span>
+    </div>
     
-    salaRecomendadaDiv.innerHTML = `
-      <div class="recomendacion-badge">
-        <span class="ia-icon">🤖</span>
-        <span>RECOMENDACIÓN IA</span>
-      </div>
-      
-      <div class="recomendacion-header">
-        <h3>🏆 Sala ${sala.numero}</h3>
-        <div class="score-badge">Score: ${sala.scoreFinal?.toFixed(0) || 100}/100</div>
-      </div>
-      
-      <div class="recomendacion-body">
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Piso:</span>
-            <span class="value">${sala.piso}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Capacidad:</span>
-            <span class="value">${sala.capacidad} personas</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Ocupación:</span>
-            <span class="value">${ratioOcupacion}%</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Espacios libres:</span>
-            <span class="value">${sala.capacidad - resultado.requisitos.capacidadNecesaria}</span>
-          </div>
+    <div class="recomendacion-header">
+      <h3>🏆 Sala ${sala.numero}</h3>
+      <div class="score-badge">Score: ${sala.scoreFinal?.toFixed(0) || 100}/100</div>
+    </div>
+    
+    <div class="recomendacion-body">
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Piso:</span>
+          <span class="value">${sala.piso}</span>
         </div>
-
-        <div class="recursos-grid">
-          ${sala.tiene_computadores ? '<span class="recurso-badge">💻 Computadores</span>' : ''}
-          ${sala.tiene_proyector ? '<span class="recurso-badge">📽️ Proyector</span>' : ''}
+        <div class="info-item">
+          <span class="label">Capacidad:</span>
+          <span class="value">${sala.capacidad} personas</span>
         </div>
-
-        ${sala.insights && sala.insights.length > 0 ? `
-          <div class="insights-mini">
-            <strong>Por qué es la mejor opción:</strong>
-            <ul>
-              ${sala.insights.slice(0, 3).map(insight => `<li>${insight}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-
-        <button onclick="seleccionarSala(${sala.id}, '${sala.numero}')" class="btn-primary btn-large">
-          ✅ Reservar Esta Sala
-        </button>
+        <div class="info-item">
+          <span class="label">Ocupación:</span>
+          <span class="value">${ratioOcupacion}%</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Espacios libres:</span>
+          <span class="value">${sala.capacidad - resultado.requisitos.capacidadNecesaria}</span>
+        </div>
       </div>
-    `;
-  } else {
+
+      <div class="recursos-grid">
+        ${sala.tiene_computadores ? '<span class="recurso-badge">💻 Computadores</span>' : ''}
+        ${sala.tiene_proyector ? '<span class="recurso-badge">📽️ Proyector</span>' : ''}
+        ${!sala.tiene_computadores && !sala.tiene_proyector ? '<span class="recurso-badge">📚 Básica</span>' : ''}
+      </div>
+
+      <!-- ⚡ MOSTRAR QUÉ SE SOLICITÓ -->
+      <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+        <strong>Requisitos solicitados:</strong><br>
+        ${resultado.requisitos.requiereComputadores ? '✅ Computadores requeridos' : '➖ Computadores no requeridos'}<br>
+        ${resultado.requisitos.requiereProyector ? '✅ Proyector requerido' : '➖ Proyector no requerido'}
+      </div>
+
+      ${sala.insights && sala.insights.length > 0 ? `
+        <div class="insights-mini">
+          <strong>Por qué es la mejor opción:</strong>
+          <ul>
+            ${sala.insights.slice(0, 3).map(insight => `<li>${insight}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
+
+      <button onclick="seleccionarSala(${sala.id}, '${sala.numero}')" class="btn-primary btn-large">
+        ✅ Reservar Esta Sala
+      </button>
+    </div>
+  `;
+}else {
     salaRecomendadaDiv.innerHTML = `
       <div class="no-results">
         <h3>❌ No se encontraron salas disponibles</h3>

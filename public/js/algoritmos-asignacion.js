@@ -83,25 +83,50 @@ class AlgoritmosAsignacion {
   }
 
   filtrarSalasDisponibles(requisitos) {
-    return this.salas.filter(sala => {
-      if (sala.tipo !== 'sala') return false;
+  console.log('🔍 Filtrando salas con requisitos:', requisitos);
+  
+  return this.salas.filter(sala => {
+    // 1. Solo salas (no baños ni escaleras)
+    if (sala.tipo !== 'sala') {
+      console.log(`❌ ${sala.numero}: No es una sala`);
+      return false;
+    }
 
-      const estaOcupada = this.reservasActuales.some(reserva =>
-        reserva.salaId === sala.id &&
-        reserva.dia === requisitos.dia &&
-        reserva.horaInicio === requisitos.horario.split('-')[0].trim() &&
-        reserva.estado === 'confirmada'
-      );
-      if (estaOcupada) return false;
+    // 2. Verificar que no esté ocupada
+    const estaOcupada = this.reservasActuales.some(reserva =>
+      reserva.salaId === sala.id &&
+      reserva.dia === requisitos.dia &&
+      reserva.horaInicio === requisitos.horario.split('-')[0].trim() &&
+      reserva.estado === 'confirmada'
+    );
+    
+    if (estaOcupada) {
+      console.log(`❌ ${sala.numero}: Ocupada`);
+      return false;
+    }
 
-      if (sala.capacidad < requisitos.capacidadNecesaria) return false;
+    // 3. Verificar capacidad
+    if (sala.capacidad < requisitos.capacidadNecesaria) {
+      console.log(`❌ ${sala.numero}: Capacidad insuficiente (${sala.capacidad} < ${requisitos.capacidadNecesaria})`);
+      return false;
+    }
 
-      if (requisitos.requiereProyector && !sala.tiene_proyector) return false;
-      if (requisitos.requiereComputadores && !sala.tiene_computadores) return false;
+    // 4. ⚡ VERIFICAR PROYECTOR (si se requiere)
+    if (requisitos.requiereProyector && !sala.tiene_proyector) {
+      console.log(`❌ ${sala.numero}: No tiene proyector`);
+      return false;
+    }
 
-      return true;
-    });
-  }
+    // 5. ⚡ VERIFICAR COMPUTADORES (si se requieren)
+    if (requisitos.requiereComputadores && !sala.tiene_computadores) {
+      console.log(`❌ ${sala.numero}: No tiene computadores`);
+      return false;
+    }
+
+    console.log(`✅ ${sala.numero}: Cumple todos los requisitos`);
+    return true;
+  });
+}
 
   analizarPatronesHistoricos() {
     const patrones = {};
