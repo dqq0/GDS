@@ -239,37 +239,147 @@ app.delete(`${API_URL}/reservations/:id/cancelar-con-aviso`, async (req, res) =>
   });
 });
 
-// ==========================================
-// SALAS Y BÚSQUEDA
-// ==========================================
-app.get(`${API_URL}/salas/todas`, async (req, res) => {
-  const todasLasSalas = [];
+pp.get(`${API_URL}/salas/todas`, async (req, res) => {
   try {
-    Object.keys(CONFIGURACION_PISOS).forEach(piso => {
-      const config = CONFIGURACION_PISOS[piso];
-      if (config.salas) {
-        const salasDelPiso = config.salas
-          .filter(s => s.tipo === 'sala' || s.tipo === 'laboratorio')
-          .map(s => ({ ...s, piso: parseInt(piso) }));
-        todasLasSalas.push(...salasDelPiso);
-      }
-    });
-    res.json(todasLasSalas);
+    // Obtener todas las salas de Supabase
+    const { data, error } = await supabase
+      .from('salas')
+      .select('*')
+      .eq('tipo', 'sala')
+      .order('piso', { ascending: true })
+      .order('numero_sala', { ascending: true });
+
+    if (error) {
+      console.error("Error de Supabase:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    // ⚡ MAPEAR CORRECTAMENTE las columnas de Supabase al formato del frontend
+    const salasMapeadas = data.map(sala => ({
+      id: sala.id,
+      nombre: sala.nombre,
+      numero: sala.numero_sala,           // ⬅️ Frontend usa "numero"
+      numero_sala: sala.numero_sala,      // ⬅️ También mantener original
+      piso: sala.piso,
+      capacidad: sala.capacidad,
+      tiene_computadores: sala.tiene_computadores,  // ⬅️ CRÍTICO
+      tiene_proyector: sala.tiene_proyector,        // ⬅️ CRÍTICO
+      utilidad: sala.utilidad,
+      tipo: sala.tipo || 'sala',
+      disponible: sala.disponible !== false,
+      
+      // Si tienes polígonos en CONFIGURACION_PISOS, los podrías agregar aquí
+      // pero no son necesarios para el algoritmo de asignación
+      polygon: obtenerPoligonoPorNumero(sala.numero_sala, sala.piso)
+    }));
+
+    console.log(`✅ ${salasMapeadas.length} salas obtenidas de Supabase`);
+    res.json(salasMapeadas);
+    
   } catch (error) {
-    console.error("Error al obtener salas:", error);
-    res.status(500).json({ error: "Error interno" });
+    console.error("❌ Error al obtener salas:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
-app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
-  // Simulación de algoritmo
-  const salasDisponibles = [
-    { id: 101, numero: '101', capacidad: 40, tiene_computadores: true, tiene_proyector: true, piso: 1, score: 95 },
-    { id: 201, numero: '201', capacidad: 30, tiene_computadores: false, tiene_proyector: true, piso: 2, score: 85 }
-  ];
-  res.json({ salas: salasDisponibles, algoritmo: 'heuristica_v1' });
-});
+// 🔧 Función auxiliar para obtener polígonos (OPCIONAL)
+function obtenerPoligonoPorNumero(numeroSala, piso) {
+  try {
+    const config = CONFIGURACION_PISOS[piso];
+    if (!config) return null;
+    
+    const sala = config.salas.find(s => s.numero === numeroSala);
+    return sala?.polygon || null;
+  } catch (error) {
+    return null;
+  }
+}
 
+// ==========================================
+// BÚSQUEDA INTELIGENTE (Ya no es necesario, pero lo dejo como backup)
+// ==========================================
+app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
+  try {
+    const { capacidadNecesaria, requiereComputadores, requiereProyector, dia, horario } = req.body;
+
+    // 1. Obtener todas las salas de Supabase
+    const { data: salas, error: errorSalas } = await supabase
+      .from('salas')
+      .select('*')
+      .eq('tipo', 'sala')
+      .gte('capacidad', capacidadNecesaria || 0);
+
+    if (errorSalas) {
+      return res.status(500).json({ error: errorSalas.message });
+    }
+
+    // 2. Obtener reservas del día y horario específico
+    const [horaInicio] = horario.split('-').map(h => h.trim());
+    const { data: reservas, error: errorReservas } = await supabase
+      .from('reservas')
+      .select('sala_id')
+      .eq('dia', dia)
+      .eq('hora_inicio', horaInicio)
+      .eq('estado', 'confirmada');
+
+    if (errorReservas) {
+      return res.status(500).json({ error: errorReservas.message });
+    }
+
+    const idsOcupados = new Set(reservas.map(r => r.sala_id));
+
+    // 3. Filtrar salas disponibles
+    const salasDisponibles = salas.filter(sala => {
+      // No está ocupada
+      if (idsOcupados.has(sala.id)) return false;
+      
+      // Cumple requisitos de recursos
+      if (requiereComputadores && !sala.tiene_computadores) return false;
+      if (requiereProyector && !sala.tiene_proyector) return false;
+      
+      return true;
+    });
+
+    // 4. Calcular score para cada sala
+    const salasConScore = salasDisponibles.map(sala => {
+      const ratioOcupacion = capacidadNecesaria / sala.capacidad;
+      let score = 100;
+
+      // Score por ocupación óptima
+      if (ratioOcupacion >= 0.75 && ratioOcupacion <= 0.95) score += 40;
+      else if (ratioOcupacion >= 0.60) score += 30;
+      else if (ratioOcupacion < 0.50) score -= 20;
+
+      // Score por recursos
+      if (requiereComputadores && sala.tiene_computadores) score += 10;
+      if (requiereProyector && sala.tiene_proyector) score += 10;
+
+      // Score por piso (accesibilidad)
+      if (sala.piso <= 2) score += 15;
+      else if (sala.piso === 3) score += 10;
+
+      return {
+        ...sala,
+        numero: sala.numero_sala,
+        scoreFinal: Math.max(0, Math.min(150, score)),
+        ratioOcupacion: ratioOcupacion * 100
+      };
+    });
+
+    // 5. Ordenar por score
+    salasConScore.sort((a, b) => b.scoreFinal - a.scoreFinal);
+
+    res.json({ 
+      salas: salasConScore,
+      algoritmo: 'heuristica_inteligente_v2',
+      totalEncontradas: salasConScore.length
+    });
+
+  } catch (error) {
+    console.error("❌ Error en búsqueda inteligente:", error);
+    res.status(500).json({ error: "Error en búsqueda inteligente" });
+  }
+});
 // ==========================================
 // MENSAJES Y NOTIFICACIONES
 // ==========================================
