@@ -87,298 +87,62 @@ app.post(`${API_URL}/auth/login`, async (req, res) => {
   });
 });
 
+//==========================================
+
+// SALAS Y BÚSQUEDA
+
 // ==========================================
-// RESERVACIONES
-// ==========================================
 
-// Obtener reservas con filtros
-app.get(`${API_URL}/reservations`, async (req, res) => {
-  const { dia, piso } = req.query;
-  let resultado = reservas.filter(r => r.estado === 'confirmada');
-  
-  if (dia) resultado = resultado.filter(r => r.dia === dia);
-  if (piso) resultado = resultado.filter(r => r.piso === parseInt(piso));
-  
-  res.json(resultado);
-});
+app.get(${API_URL}/salas/todas, async (req, res) => {
 
-// Obtener todas las reservas
-app.get(`${API_URL}/reservations/todas`, async (req, res) => {
-  res.json(reservas);
-});
+const todasLasSalas = [];
 
-// Obtener reservas de un profesor específico
-app.get(`${API_URL}/reservations/profesor/:userId`, async (req, res) => {
-  const { userId } = req.params;
-  
-  const reservasProfesor = reservas.filter(r => 
-    String(r.usuarioId) === String(userId) && 
-    r.estado === 'confirmada'
-  );
-  
-  res.json({ reservas: reservasProfesor });
-});
+try {
 
-// Crear nueva reserva
-app.post(`${API_URL}/reservations`, async (req, res) => {
-  const { salaId, usuarioId, dia, horaInicio, horaFin, asignatura, piso, profesor } = req.body;
+Object.keys(CONFIGURACION_PISOS).forEach(piso => {
 
-  // Validar conflictos
-  const conflicto = reservas.find(r => 
-    r.salaId === salaId &&
-    r.dia === dia &&
-    r.horaInicio === horaInicio &&
-    r.estado === 'confirmada'
-  );
+const config = CONFIGURACION_PISOS[piso];
 
-  if (conflicto) {
-    return res.status(409).json({ 
-      error: 'Esta sala ya está reservada en ese horario',
-      conflicto: conflicto
-    });
-  }
+if (config.salas) {
 
-  const nuevaReserva = {
-    id: Date.now(),
-    salaId,
-    usuarioId,
-    dia,
-    horaInicio,
-    horaFin,
-    asignatura,
-    piso,
-    profesor: profesor || 'No asignado',
-    estado: 'confirmada',
-    createdAt: new Date().toISOString()
-  };
+const salasDelPiso = config.salas
 
-  reservas.push(nuevaReserva);
-  res.status(201).json({ success: true, reserva: nuevaReserva });
-});
+.filter(s => s.tipo === 'sala' || s.tipo === 'laboratorio')
 
-// Cancelación Normal (Administrativa)
-app.delete(`${API_URL}/reservations/:id`, async (req, res) => {
-  const { id } = req.params;
-  const { motivo, canceladoPor } = req.body;
-  
-  const index = reservas.findIndex(r => r.id === parseInt(id));
-  if (index === -1) return res.status(404).json({ error: 'Reserva no encontrada' });
+.map(s => ({ ...s, piso: parseInt(piso) }));
 
-  const reserva = reservas[index];
-  
-  // Registrar cancelación
-  cancelaciones.push({
-    id: Date.now(),
-    reserva_id: parseInt(id),
-    fecha_cancelacion: new Date().toISOString(),
-    motivo: motivo || 'Sin motivo',
-    cancelado_por: canceladoPor || reserva.usuarioId
-  });
+todasLasSalas.push(...salasDelPiso);
 
-  // Notificación simple
-  notificaciones.push({
-    id: Date.now(),
-    usuario_id: reserva.usuarioId,
-    tipo: 'cancelacion',
-    mensaje: `Tu clase de ${reserva.asignatura?.nombre || 'la asignatura'} ha sido cancelada`,
-    leido: false,
-    fecha: new Date().toISOString()
-  });
-
-  reservas.splice(index, 1);
-  res.json({ success: true });
-});
-
-// Cancelar con Aviso (Para Profesores)
-app.delete(`${API_URL}/reservations/:id/cancelar-con-aviso`, async (req, res) => {
-  const { id } = req.params;
-  const { motivo, canceladoPor, asignatura, dia, horario, sala, profesor } = req.body;
-  
-  const index = reservas.findIndex(r => r.id === parseInt(id));
-  
-  if (index === -1) {
-    return res.status(404).json({ error: 'Reserva no encontrada' });
-  }
-
-  const reserva = reservas[index];
-  
-  // Registrar cancelación
-  cancelaciones.push({
-    id: Date.now(),
-    reserva_id: parseInt(id),
-    fecha_cancelacion: new Date().toISOString(),
-    motivo: motivo || 'Sin motivo',
-    cancelado_por: canceladoPor,
-    asignatura: reserva.asignatura
-  });
-
-  // Crear mensaje para TODOS los estudiantes
-  const mensaje = {
-    id: Date.now(),
-    destinatarioId: 'todos', 
-    tipo: 'cancelacion',
-    asignatura,
-    dia,
-    horario,
-    sala: `Sala ${sala}`,
-    motivo,
-    profesor,
-    fecha: new Date().toISOString(),
-    leido: false
-  };
-  
-  mensajes.push(mensaje);
-
-  // Eliminar reserva
-  reservas.splice(index, 1);
-
-  res.json({ 
-    success: true, 
-    mensaje: 'Clase cancelada y avisos enviados',
-    mensajesEnviados: 1 
-  });
-});
-
-pp.get(`${API_URL}/salas/todas`, async (req, res) => {
-  try {
-    // Obtener todas las salas de Supabase
-    const { data, error } = await supabase
-      .from('salas')
-      .select('*')
-      .eq('tipo', 'sala')
-      .order('piso', { ascending: true })
-      .order('numero_sala', { ascending: true });
-
-    if (error) {
-      console.error("Error de Supabase:", error);
-      return res.status(500).json({ error: error.message });
-    }
-
-    // ⚡ MAPEAR CORRECTAMENTE las columnas de Supabase al formato del frontend
-    const salasMapeadas = data.map(sala => ({
-      id: sala.id,
-      nombre: sala.nombre,
-      numero: sala.numero_sala,           // ⬅️ Frontend usa "numero"
-      numero_sala: sala.numero_sala,      // ⬅️ También mantener original
-      piso: sala.piso,
-      capacidad: sala.capacidad,
-      tiene_computadores: sala.tiene_computadores,  // ⬅️ CRÍTICO
-      tiene_proyector: sala.tiene_proyector,        // ⬅️ CRÍTICO
-      utilidad: sala.utilidad,
-      tipo: sala.tipo || 'sala',
-      disponible: sala.disponible !== false,
-      
-      // Si tienes polígonos en CONFIGURACION_PISOS, los podrías agregar aquí
-      // pero no son necesarios para el algoritmo de asignación
-      polygon: obtenerPoligonoPorNumero(sala.numero_sala, sala.piso)
-    }));
-
-    console.log(`✅ ${salasMapeadas.length} salas obtenidas de Supabase`);
-    res.json(salasMapeadas);
-    
-  } catch (error) {
-    console.error("❌ Error al obtener salas:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
-});
-
-// 🔧 Función auxiliar para obtener polígonos (OPCIONAL)
-function obtenerPoligonoPorNumero(numeroSala, piso) {
-  try {
-    const config = CONFIGURACION_PISOS[piso];
-    if (!config) return null;
-    
-    const sala = config.salas.find(s => s.numero === numeroSala);
-    return sala?.polygon || null;
-  } catch (error) {
-    return null;
-  }
 }
 
-// ==========================================
-// BÚSQUEDA INTELIGENTE (Ya no es necesario, pero lo dejo como backup)
-// ==========================================
-app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
-  try {
-    const { capacidadNecesaria, requiereComputadores, requiereProyector, dia, horario } = req.body;
+});
 
-    // 1. Obtener todas las salas de Supabase
-    const { data: salas, error: errorSalas } = await supabase
-      .from('salas')
-      .select('*')
-      .eq('tipo', 'sala')
-      .gte('capacidad', capacidadNecesaria || 0);
+res.json(todasLasSalas);
 
-    if (errorSalas) {
-      return res.status(500).json({ error: errorSalas.message });
-    }
+} catch (error) {
 
-    // 2. Obtener reservas del día y horario específico
-    const [horaInicio] = horario.split('-').map(h => h.trim());
-    const { data: reservas, error: errorReservas } = await supabase
-      .from('reservas')
-      .select('sala_id')
-      .eq('dia', dia)
-      .eq('hora_inicio', horaInicio)
-      .eq('estado', 'confirmada');
+console.error("Error al obtener salas:", error);
 
-    if (errorReservas) {
-      return res.status(500).json({ error: errorReservas.message });
-    }
+res.status(500).json({ error: "Error interno" });
 
-    const idsOcupados = new Set(reservas.map(r => r.sala_id));
+}
 
-    // 3. Filtrar salas disponibles
-    const salasDisponibles = salas.filter(sala => {
-      // No está ocupada
-      if (idsOcupados.has(sala.id)) return false;
-      
-      // Cumple requisitos de recursos
-      if (requiereComputadores && !sala.tiene_computadores) return false;
-      if (requiereProyector && !sala.tiene_proyector) return false;
-      
-      return true;
-    });
+});
 
-    // 4. Calcular score para cada sala
-    const salasConScore = salasDisponibles.map(sala => {
-      const ratioOcupacion = capacidadNecesaria / sala.capacidad;
-      let score = 100;
+app.post(${API_URL}/search/salas/inteligente, async (req, res) => {
 
-      // Score por ocupación óptima
-      if (ratioOcupacion >= 0.75 && ratioOcupacion <= 0.95) score += 40;
-      else if (ratioOcupacion >= 0.60) score += 30;
-      else if (ratioOcupacion < 0.50) score -= 20;
+// Simulación de algoritmo
 
-      // Score por recursos
-      if (requiereComputadores && sala.tiene_computadores) score += 10;
-      if (requiereProyector && sala.tiene_proyector) score += 10;
+const salasDisponibles = [
 
-      // Score por piso (accesibilidad)
-      if (sala.piso <= 2) score += 15;
-      else if (sala.piso === 3) score += 10;
+{ id: 101, numero: '101', capacidad: 40, tiene_computadores: true, tiene_proyector: true, piso: 1, score: 95 },
 
-      return {
-        ...sala,
-        numero: sala.numero_sala,
-        scoreFinal: Math.max(0, Math.min(150, score)),
-        ratioOcupacion: ratioOcupacion * 100
-      };
-    });
+{ id: 201, numero: '201', capacidad: 30, tiene_computadores: false, tiene_proyector: true, piso: 2, score: 85 }
 
-    // 5. Ordenar por score
-    salasConScore.sort((a, b) => b.scoreFinal - a.scoreFinal);
+];
 
-    res.json({ 
-      salas: salasConScore,
-      algoritmo: 'heuristica_inteligente_v2',
-      totalEncontradas: salasConScore.length
-    });
+res.json({ salas: salasDisponibles, algoritmo: 'heuristica_v1' });
 
-  } catch (error) {
-    console.error("❌ Error en búsqueda inteligente:", error);
-    res.status(500).json({ error: "Error en búsqueda inteligente" });
-  }
 });
 // ==========================================
 // MENSAJES Y NOTIFICACIONES
