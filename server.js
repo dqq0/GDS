@@ -18,28 +18,46 @@ let cancelaciones = [];
 let mensajes = [];
 
 // ==========================================
-// CONFIGURACIÓN DE PISOS
+// CONFIGURACIÓN DE PISOS (ACTUALIZADA)
 // ==========================================
 const CONFIGURACION_PISOS = {
   1: { 
     nombre: "Primer Piso", 
     salas: [
-      { id: 101, numero: '101', tipo: 'sala', capacidad: 40 },
-      { id: 102, numero: '102', tipo: 'sala', capacidad: 35 }
+      { id: 105, numero: '105', tipo: 'sala', capacidad: 20, tiene_computadores: false, tiene_proyector: false, utilidad: 'Sala de clases estándar', nombre: 'Sala 105' },
+      { id: 101, numero: '101', tipo: 'sala', capacidad: 25, tiene_computadores: true, tiene_proyector: true, utilidad: 'Laboratorio de computación', nombre: 'Sala 101' },
+      { id: 103, numero: '103', tipo: 'sala', capacidad: 25, tiene_computadores: true, tiene_proyector: true, utilidad: 'Laboratorio de computación', nombre: 'Sala 103' },
+      { id: 104, numero: '104', tipo: 'sala', capacidad: 20, tiene_computadores: false, tiene_proyector: true, utilidad: 'Sala con proyector', nombre: 'Sala 104' },
+      { id: 102, numero: '102', tipo: 'sala', capacidad: 20, tiene_computadores: false, tiene_proyector: true, utilidad: 'Sala con proyector', nombre: 'Sala 102' },
+      { id: 106, numero: '106', tipo: 'sala', capacidad: 20, tiene_computadores: false, tiene_proyector: true, utilidad: 'Sala con proyector', nombre: 'Sala 106' }
     ] 
   },
   2: { 
     nombre: "Segundo Piso", 
     salas: [
-      { id: 201, numero: '201', tipo: 'sala', capacidad: 30 },
-      { id: 202, numero: '202', tipo: 'laboratorio', capacidad: 25 }
+      { id: 209, numero: '209', tipo: 'sala', capacidad: 30, tiene_computadores: true, tiene_proyector: true, utilidad: 'Laboratorio de computación', nombre: 'Sala 209' },
+      { id: 207, numero: '207', tipo: 'sala', capacidad: 30, tiene_computadores: true, tiene_proyector: true, utilidad: 'Laboratorio de computación', nombre: 'Sala 207' },
+      { id: 205, numero: '205', tipo: 'sala', capacidad: 30, tiene_computadores: true, tiene_proyector: true, utilidad: 'Laboratorio de computación', nombre: 'Sala 205' },
+      { id: 203, numero: '203', tipo: 'sala', capacidad: 35, tiene_computadores: false, tiene_proyector: true, utilidad: 'Sala con proyector', nombre: 'Sala 203' },
+      { id: 210, numero: '210', tipo: 'sala', capacidad: 35, tiene_computadores: false, tiene_proyector: true, utilidad: 'Sala con proyector', nombre: 'Sala 210' },
+      { id: 208, numero: '208', tipo: 'sala', capacidad: 35, tiene_computadores: true, tiene_proyector: true, utilidad: 'Laboratorio de computación', nombre: 'Sala 208' },
+      { id: 204, numero: '204', tipo: 'sala', capacidad: 15, tiene_computadores: true, tiene_proyector: true, utilidad: 'Laboratorio de computación', nombre: 'Sala 204' },
+      { id: 201, numero: '201', tipo: 'sala', capacidad: 30, tiene_computadores: false, tiene_proyector: true, utilidad: 'Sala con proyector', nombre: 'Sala 201' }
     ] 
   },
   3: { 
     nombre: "Tercer Piso", 
     salas: [
-      { id: 301, numero: '301', tipo: 'sala', capacidad: 50 },
-      { id: 302, numero: '302', tipo: 'sala', capacidad: 45 }
+      { id: 308, numero: '308', tipo: 'sala', capacidad: 40, tiene_computadores: false, tiene_proyector: true, utilidad: 'Pizarra digital, Proyector', nombre: 'Sala 308' },
+      { id: 307, numero: '307', tipo: 'sala', capacidad: 30, tiene_computadores: false, tiene_proyector: true, utilidad: 'Pizarra, 30 sillas', nombre: 'Sala 307' },
+      { id: 306, numero: '306', tipo: 'sala', capacidad: 35, tiene_computadores: false, tiene_proyector: true, utilidad: 'Proyector, Audio', nombre: 'Sala 306' },
+      { id: 305, numero: '305', tipo: 'sala', capacidad: 25, tiene_computadores: true, tiene_proyector: true, utilidad: '20 Computadores', nombre: 'Sala 305' },
+      { id: 304, numero: '304', tipo: 'sala', capacidad: 30, tiene_computadores: true, tiene_proyector: true, utilidad: '25 Computadores, Impresora', nombre: 'Sala 304' },
+      { id: 303, numero: '303', tipo: 'sala', capacidad: 40, tiene_computadores: false, tiene_proyector: true, utilidad: 'Proyector 4K, Audio envolvente', nombre: 'Sala 303' },
+      { id: 310, numero: '310', tipo: 'sala', capacidad: 15, tiene_computadores: false, tiene_proyector: true, utilidad: 'Mesa de conferencias, Proyector', nombre: 'Sala 310' },
+      { id: 309, numero: '309', tipo: 'sala', capacidad: 20, tiene_computadores: false, tiene_proyector: false, utilidad: 'Mesas individuales, Silencioso', nombre: 'Sala 309' },
+      { id: 301, numero: '301', tipo: 'sala', capacidad: 100, tiene_computadores: false, tiene_proyector: true, utilidad: '100 butacas, Audio profesional', nombre: 'Sala 301' },
+      { id: 302, numero: '302', tipo: 'sala', capacidad: 10, tiene_computadores: true, tiene_proyector: false, utilidad: 'Equipos técnicos', nombre: 'Sala 302' }
     ] 
   }
 };
@@ -78,7 +96,7 @@ app.post(`${API_URL}/auth/login`, async (req, res) => {
 
   res.json({
     user: {
-      id: Date.now().toString(), // String para compatibilidad con Supabase
+      id: Date.now().toString(),
       nombre: usuario.nombre,
       email: emailLower,
       rol: usuario.rol,
@@ -87,113 +105,160 @@ app.post(`${API_URL}/auth/login`, async (req, res) => {
   });
 });
 
-//==========================================
+// ==========================================
+// SALAS Y BÚSQUEDA (CORREGIDO)
+// ==========================================
+app.get(`${API_URL}/salas/todas`, async (req, res) => {
+  const todasLasSalas = [];
+  try {
+    Object.keys(CONFIGURACION_PISOS).forEach(piso => {
+      const config = CONFIGURACION_PISOS[piso];
+      if (config.salas) {
+        const salasDelPiso = config.salas
+          .filter(s => s.tipo === 'sala' || s.tipo === 'laboratorio')
+          .map(s => ({ 
+            ...s, 
+            piso: parseInt(piso),
+            disponible: true
+          }));
+        todasLasSalas.push(...salasDelPiso);
+      }
+    });
+    
+    console.log(`✅ ${todasLasSalas.length} salas cargadas`);
+    res.json(todasLasSalas);
+  } catch (error) {
+    console.error("❌ Error al obtener salas:", error);
+    res.status(500).json({ error: "Error interno" });
+  }
+});
 
-// SALAS Y BÚSQUEDA
+app.post(`${API_URL}/search/salas/inteligente`, async (req, res) => {
+  try {
+    const { capacidadNecesaria, requiereComputadores, requiereProyector, dia, horario } = req.body;
+    
+    // Obtener todas las salas
+    const todasLasSalas = [];
+    Object.keys(CONFIGURACION_PISOS).forEach(piso => {
+      const config = CONFIGURACION_PISOS[piso];
+      if (config.salas) {
+        config.salas
+          .filter(s => s.tipo === 'sala' || s.tipo === 'laboratorio')
+          .forEach(s => todasLasSalas.push({ ...s, piso: parseInt(piso) }));
+      }
+    });
+
+    // Filtrar reservas del día/horario
+    const [horaInicio] = horario.split('-').map(h => h.trim());
+    const idsOcupados = new Set(
+      reservas
+        .filter(r => r.dia === dia && r.horaInicio === horaInicio && r.estado === 'confirmada')
+        .map(r => r.salaId)
+    );
+
+    // Filtrar salas disponibles
+    const salasDisponibles = todasLasSalas.filter(sala => {
+      if (idsOcupados.has(sala.id)) return false;
+      if (sala.capacidad < capacidadNecesaria) return false;
+      if (requiereComputadores && !sala.tiene_computadores) return false;
+      if (requiereProyector && !sala.tiene_proyector) return false;
+      return true;
+    });
+
+    // Calcular score
+    const salasConScore = salasDisponibles.map(sala => {
+      const ratioOcupacion = capacidadNecesaria / sala.capacidad;
+      let score = 100;
+
+      if (ratioOcupacion >= 0.75 && ratioOcupacion <= 0.95) score += 40;
+      else if (ratioOcupacion >= 0.60) score += 30;
+      else if (ratioOcupacion < 0.50) score -= 20;
+
+      if (requiereComputadores && sala.tiene_computadores) score += 10;
+      if (requiereProyector && sala.tiene_proyector) score += 10;
+
+      if (sala.piso <= 2) score += 15;
+      else if (sala.piso === 3) score += 10;
+
+      return {
+        ...sala,
+        scoreFinal: Math.max(0, Math.min(150, score)),
+        ratioOcupacion: ratioOcupacion * 100
+      };
+    });
+
+    salasConScore.sort((a, b) => b.scoreFinal - a.scoreFinal);
+
+    res.json({ 
+      salas: salasConScore,
+      algoritmo: 'heuristica_inteligente_v2',
+      totalEncontradas: salasConScore.length
+    });
+
+  } catch (error) {
+    console.error("❌ Error en búsqueda:", error);
+    res.status(500).json({ error: "Error en búsqueda" });
+  }
+});
 
 // ==========================================
-
-app.get(${API_URL}/salas/todas, async (req, res) => {
-
-const todasLasSalas = [];
-
-try {
-
-Object.keys(CONFIGURACION_PISOS).forEach(piso => {
-
-const config = CONFIGURACION_PISOS[piso];
-
-if (config.salas) {
-
-const salasDelPiso = config.salas
-
-.filter(s => s.tipo === 'sala' || s.tipo === 'laboratorio')
-
-.map(s => ({ ...s, piso: parseInt(piso) }));
-
-todasLasSalas.push(...salasDelPiso);
-
-}
-
+// RESERVAS
+// ==========================================
+app.post(`${API_URL}/reservations`, async (req, res) => {
+  try {
+    const nuevaReserva = {
+      id: Date.now(),
+      ...req.body,
+      estado: 'confirmada',
+      created_at: new Date().toISOString()
+    };
+    
+    reservas.push(nuevaReserva);
+    res.status(201).json(nuevaReserva);
+  } catch (error) {
+    console.error("❌ Error al crear reserva:", error);
+    res.status(500).json({ error: "Error al crear reserva" });
+  }
 });
 
-res.json(todasLasSalas);
-
-} catch (error) {
-
-console.error("Error al obtener salas:", error);
-
-res.status(500).json({ error: "Error interno" });
-
-}
-
+app.get(`${API_URL}/reservations/todas`, async (req, res) => {
+  res.json(reservas);
 });
 
-app.post(${API_URL}/search/salas/inteligente, async (req, res) => {
-
-// Simulación de algoritmo
-
-const salasDisponibles = [
-
-{ id: 101, numero: '101', capacidad: 40, tiene_computadores: true, tiene_proyector: true, piso: 1, score: 95 },
-
-{ id: 201, numero: '201', capacidad: 30, tiene_computadores: false, tiene_proyector: true, piso: 2, score: 85 }
-
-];
-
-res.json({ salas: salasDisponibles, algoritmo: 'heuristica_v1' });
-
-});
 // ==========================================
 // MENSAJES Y NOTIFICACIONES
 // ==========================================
-
-// Obtener mensajes de un usuario (Incluye mensajes para 'todos')
 app.get(`${API_URL}/mensajes/:userId`, async (req, res) => {
   const { userId } = req.params;
-  
   const userMensajes = mensajes
     .filter(m => String(m.destinatarioId) === String(userId) || m.destinatarioId === 'todos')
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-  
   res.json({ mensajes: userMensajes });
 });
 
-// Contar mensajes no leídos
 app.get(`${API_URL}/notifications/:userId/count`, async (req, res) => {
   const { userId } = req.params;
-  
   const count = mensajes.filter(m => 
     (String(m.destinatarioId) === String(userId) || m.destinatarioId === 'todos') && !m.leido
   ).length;
-  
   res.json({ count });
 });
 
-// Marcar mensaje individual como leído
 app.patch(`${API_URL}/mensajes/:id/leer`, async (req, res) => {
   const { id } = req.params;
-  
   const mensaje = mensajes.find(m => m.id === parseInt(id));
-  if (mensaje) {
-    mensaje.leido = true;
-  }
-  
+  if (mensaje) mensaje.leido = true;
   res.json({ success: true });
 });
 
-// Marcar todos los mensajes como leídos
 app.patch(`${API_URL}/mensajes/:userId/leer-todos`, async (req, res) => {
   const { userId } = req.params;
-  
   mensajes
     .filter(m => String(m.destinatarioId) === String(userId) || m.destinatarioId === 'todos')
     .forEach(m => m.leido = true);
-  
   res.json({ success: true });
 });
 
-// Compatibilidad con sistema antiguo de notificaciones
 app.get(`${API_URL}/notifications/:userId`, async (req, res) => {
   const { userId } = req.params;
   const userNotif = notificaciones.filter(n => String(n.usuario_id) === String(userId));
@@ -207,7 +272,6 @@ app.get(`${API_URL}/cancelaciones`, async (req, res) => {
   res.json({ cancelaciones });
 });
 
-// Obtener cancelaciones de un usuario específico
 app.get(`${API_URL}/cancelaciones/usuario/:userId`, async (req, res) => {
   const { userId } = req.params;
   const userCancelaciones = cancelaciones.filter(c => 
@@ -233,7 +297,6 @@ app.get(`${API_URL}/schedule/:userId`, async (req, res) => {
       nombreSala: `Sala ${r.salaId}`,
       profesor: r.profesor
     }));
-
   res.json({ schedule: horario });
 });
 
